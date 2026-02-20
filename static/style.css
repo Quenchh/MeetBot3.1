@@ -1,0 +1,60 @@
+/* ── MeetBot 2.0 Styles (Tailwind Supplement) ── */
+
+/* 
+   We kept this file for:
+   1. Toast notifications (easier to keep vanilla for now)
+   2. Any specific overrides not easily handled by Tailwind utility classes
+*/
+
+:root {
+    --success: #00d26a;
+    --danger: #f7365d;
+    --bg-card: #0f0f0f;
+    --border: #2a2a2a;
+}
+
+/* ── Toast ── */
+.toast-container {
+    /* Position handled by Tailwind in HTML */
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--bg-card);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+    /* Allow clicking toast if needed */
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast.success {
+    border-color: var(--success);
+    color: var(--success);
+    border-left-width: 4px;
+}
+
+.toast.error {
+    border-color: var(--danger);
+    color: var(--danger);
+    border-left-width: 4px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
