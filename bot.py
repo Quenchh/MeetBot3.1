@@ -249,6 +249,7 @@ class MeetBot:
             "--no-default-browser-check",
             "--disable-notifications",
             "--autoplay-policy=no-user-gesture-required",
+            "--headless=new",
             "about:blank",
         ]
 
