@@ -66,7 +66,7 @@ playwright install chromium
 ```bash
 python main.py
 ```
-> Sunucu `http://127.0.0.1:8000` veya bulunduğunuz ağın yerel IP'si üzerinden yayına başlar.
+> Sunucu Bulunduğunuz ağın yerel IP'si üzerinden yayına başlar.
 
 ---
 
@@ -75,7 +75,7 @@ python main.py
 1. **Dashboard'a Erişim:** Tarayıcınızdan `http://localhost:8000` adresine gidin.
 2. **Kullanıcı Adı:** Sisteme bağlandığınızda sizi temsil edecek bir isim belirleyin.
 3. **Toplantıya Katılım (Admin):** 
-   - Sağ üstteki kilit ikonuna basıp admin şifresi (`xasimaymun123` - *kod içerisinden değiştirilebilir*) ile yetki alın.
+   - Sağ üstteki kilit ikonuna basıp admin şifresi (`password123` - *kod içerisinden değiştirilebilir*) ile yetki alın.
    - Google Meet linkinizi panoya yapıştırıp **Katıl** butonuna basın. Bot arka planda odaya girecektir.
 4. **Müzik Ekleme:** YouTube linkinizi yapıştırın. Bot anında şarkı bilgilerini çekip kuyruğa dahil edecektir.
 5. **Kontrol:** Parçaları sıraya dizebilir, sürükleyebilir, durdurabilir ve ince ses ayarlarını panelden canlı olarak yapabilirsiniz!
@@ -112,5 +112,5 @@ python main.py
 ---
 
 <div align="center">
-  <p>🎨 <b>Vedat</b> tarafından sevgiyle geliştirildi.</p>
+  <p>🎨 <b>Vedat</b> tarafından maymunlukla geliştirildi.</p>
 </div>
