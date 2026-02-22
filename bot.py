@@ -240,6 +240,10 @@ class MeetBot:
             chrome_yolu,
             f"--remote-debugging-port={CDP_PORT}",
             f"--user-data-dir={PROFIL_DIZINI}",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--start-maximized",
             "--use-fake-ui-for-media-stream",
             "--use-fake-device-for-media-stream",  # Sahte cihaz (Dosya ile beslenecek)
             f"--use-file-for-fake-audio-capture={silence_wav}", # Beep yerine SESSİZLİK dosyasını kullan!
@@ -249,7 +253,6 @@ class MeetBot:
             "--no-default-browser-check",
             "--disable-notifications",
             "--autoplay-policy=no-user-gesture-required",
-            "--headless=new",
             "about:blank",
         ]
 
@@ -279,13 +282,27 @@ class MeetBot:
         )
         self.context = self.browser.contexts[0]
 
-        # Mevcut sayfaları kontrol et
+        # Mevcut sayfaları kontrol et, yoksa yarat
         pages = self.context.pages
         if pages:
             self.page = pages[0]
         else:
             self.page = await self.context.new_page()
 
+        print("✅  Playwright bağlantısı kuruldu.")
+
+    async def _ensure_page(self):
+        """Meet katılımı öncesi sekmeyi temizleyip hazırlar."""
+        if not self.page or self.page.is_closed():
+            self.page = await self.context.new_page()
+            
+        # Eskiyi temizle (RAM boşaltır, SIGTRAP ihtimalini azaltır)
+        try:
+            await self.page.goto("about:blank")
+            await self.page.wait_for_timeout(500)
+        except Exception:
+            pass
+        
         # Stealth uygula
         try:
             from playwright_stealth import Stealth
@@ -294,16 +311,100 @@ class MeetBot:
             print(f"⚠️  Stealth uygulanamadı: {e}")
 
         # Web Audio API enjeksiyonunu init script olarak ekle
-        # Bu, sayfa yüklenmeden önce çalışır ve getUserMedia'yı patch'ler.
-        # Böylece Meet mikrofon istediğinde bizim sahte stream'imizi alır.
         await self.context.add_init_script(AUDIO_INJECT_SCRIPT)
         print("✅  Audio Injection Script (Init) eklendi.")
         await self.page.add_init_script(AUDIO_INJECT_SCRIPT)
+        print("✅  Yeni temiz sekme hazır (SIGTRAP koruması).")
 
-        print("✅  Playwright bağlantısı kuruldu.")
+    async def _full_browser_restart(self):
+        print("🛑  Tarayıcı tamamen yeniden başlatılıyor...")
+        try:
+            if self.browser:
+                await self.browser.close()
+        except: pass
+        try:
+            if self.playwright:
+                await self.playwright.stop()
+        except: pass
+        try:
+            if self.chrome_process:
+                self.chrome_process.terminate()
+                try:
+                    self.chrome_process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    self.chrome_process.kill()
+        except: pass
+        
+        # Windows sunucuda zombi process kalmaması için garanti temizlik
+        if platform.system() == "Windows":
+            print("🧹  Olası zombi Chrome işlemleri temizleniyor...")
+            os.system("taskkill /F /IM chrome.exe >nul 2>&1")
+        
+        self.browser = None
+        self.context = None
+        self.page = None
+        self.playwright = None
+        self.chrome_process = None
+        
+        await asyncio.sleep(2)
+        await self.start_chrome()
+        await self.connect()
+
+    async def _recreate_page(self):
+        """Sayfa çöktüğünde ("Target crashed") tamamen yeni bir sekme oluşturur."""
+        print("🔄  Arızalı sekme tamamen iptal ediliyor, yepyeni sayfa açılıyor...")
+        if self.page and not self.page.is_closed():
+            try:
+                await self.page.close()
+            except Exception:
+                pass
+        self.page = None
+        
+        try:
+            await self._ensure_page()
+            # Basit bir evaluate ile sayfanın sağlığını doğrula
+            await self.page.evaluate("1 + 1")
+        except Exception as e:
+            print(f"⚠️  Sekme oluşturulamadı, tarayıcı/bağlam arızalı olabilir ({e}). Yeni tarayıcı başlatılacak...")
+            await self._full_browser_restart()
 
     async def join_meet(self, link: str):
         """Google Meet toplantısına katıl."""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                await self._join_meet_logic(link)
+                return
+            except Exception as e:
+                hata_msg = str(e)
+                print(f"⚠️  Katılma denemesi {attempt + 1}/{max_retries} başarısız oldu: {hata_msg}")
+                if attempt < max_retries - 1:
+                    # Hata Chromium'un "Aw, Snap!" (Çökme) ekranı olabilir mi diye bak
+                    reload_basarili = False
+                    if self.page and not self.page.is_closed():
+                        try:
+                            # 1 sn bekle ve çöken sayfadaki "Reload" düğmesini ara
+                            await self.page.wait_for_timeout(1000)
+                            reload_btn = self.page.locator('button:has-text("Reload"), button:has-text("Yeniden Yükle")').first
+                            if await reload_btn.is_visible(timeout=2000):
+                                print("🔄  'Aw, Snap!' tespit edildi. Ekrandaki 'Reload' butonuna basılıyor...")
+                                await reload_btn.click()
+                                await self.page.wait_for_load_state("domcontentloaded", timeout=10000)
+                                reload_basarili = True
+                        except Exception:
+                            pass
+                    
+                    if not reload_basarili:
+                        await self._recreate_page()
+                    
+                    await asyncio.sleep(2)
+                else:
+                    raise RuntimeError(f"Meet'e katılma hatası: {hata_msg}")
+
+    async def _join_meet_logic(self, link: str):
+        """Asıl Google Meet'e katılma adımları."""
+        await self._ensure_page()
+        
         print(f"🌐  Meet'e gidiliyor: {link}")
         await self.page.goto(link, wait_until="domcontentloaded", timeout=SAYFA_YUKLEME_MS)
 
@@ -717,7 +818,7 @@ class MeetBot:
 
     async def leave_meet(self):
         """Toplantıdan ayrıl."""
-        if not self.page:
+        if not self.page or self.page.is_closed():
             return
 
         print("👋  Toplantıdan ayrılınıyor...")
@@ -729,13 +830,14 @@ class MeetBot:
                 await leave_btn.click()
                 print("✅  Ayrıl butonuna tıklandı.")
             else:
-                print("⚠️  Ayrıl butonu bulunamadı, direkt sayfayı kapatıyorum.")
+                print("⚠️  Ayrıl butonu bulunamadı, direkt sayfayı temizliyorum.")
         except Exception as e:
             print(f"⚠️  Ayrılma hatası: {e}")
 
-        # Her durumda ana sayfaya dön veya boş sayfaya git
+        # Her durumda ana sayfaya dön / boş sayfaya git
         try:
-            await self.page.goto("about:blank")
+            await self.page.goto("about:blank", wait_until="commit", timeout=5000)
+            print("🧹  Sekme about:blank'e yönlendirilerek temizlendi.")
         except:
             pass
 

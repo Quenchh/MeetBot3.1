@@ -17,6 +17,9 @@ from audio_manager import get_metadata, download_audio
 
 from contextlib import asynccontextmanager
 
+DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+
 # ──────────────────────────────────────────────────────────────
 #  Global State (RAM'de tutuluyor)
 # ──────────────────────────────────────────────────────────────
@@ -31,6 +34,16 @@ def set_cleanup_callback(cb):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup işlemleri (varsa)
+    print("🧹  Başlangıç temizliği yapılıyor (Downloads klasörü)...")
+    try:
+        if os.path.exists(DOWNLOADS_DIR):
+            for filename in os.listdir(DOWNLOADS_DIR):
+                file_path = os.path.join(DOWNLOADS_DIR, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+    except Exception as e:
+        print(f"⚠️  Başlangıç temizliği hatası: {e}")
+        
     yield
     # Shutdown işlemleri
     if cleanup_callback:
@@ -83,9 +96,7 @@ app.add_middleware(
 
 # Static dosyalar
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
 os.makedirs(STATIC_DIR, exist_ok=True)
-os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -159,6 +170,11 @@ async def populate_song(song: dict):
         path = await download_audio(song["url"])
         song["file_path"] = path
         print(f"✅  Ön indirme tamam: {song['title']}")
+        
+        # Eğer indirilirken silindiyse dosyayı temizle
+        if song.get("_removed"):
+            print(f"🗑️  Şarkı indirme sırasında silinmiş, dosya temizleniyor: {song['title']}")
+            cleanup_song(song)
     except Exception as e:
         print(f"⚠️  Ön indirme hatası ({song['title']}): {e}")
     finally:
@@ -172,11 +188,32 @@ def prefetch_next_songs():
         asyncio.create_task(populate_song(song))
 
 
+def is_file_in_use(file_path: str, exclude_song_id: int) -> bool:
+    """Belirtilen dosyanın kuyruktaki başka bir şarkı veya çalan şarkı tarafından kullanılıp kullanılmadığını kontrol eder."""
+    if not file_path:
+        return False
+        
+    if app_state["current_song"] and app_state["current_song"].get("id") != exclude_song_id:
+        if app_state["current_song"].get("file_path") == file_path:
+            return True
+            
+    for s in app_state["queue"]:
+        if s.get("id") != exclude_song_id and s.get("file_path") == file_path:
+            return True
+            
+    return False
+
+
 def cleanup_song(song: dict):
-    """Şarkı dosyasını sil."""
+    """Şarkı dosyasını sil (Eğer başka bir şarkı tarafından kullanılmıyorsa)."""
     if not song: return
     path = song.get("file_path")
+    
     if path and os.path.exists(path):
+        if is_file_in_use(path, song.get("id")):
+            print(f"💡  Dosya silinmedi, kuyruktaki başka bir şarkı tarafından kullanılıyor: {song['title']}")
+            return
+            
         try:
             os.remove(path)
             print(f"🗑️  Dosya silindi: {song['title']}")
@@ -184,16 +221,15 @@ def cleanup_song(song: dict):
             print(f"⚠️  Dosya silinemedi: {e}")
 
 
-async def play_next():
+async def play_next(force_cleanup=False):
     """Kuyruktaki sıradaki şarkıyı çal."""
     
-    # Eski şarkıyı temizle (Eğer loop kapalıysa)
+    # Eski şarkıyı temizle (Eğer loop kapalıysa veya force_cleanup açıksa)
     old_song = app_state["current_song"]
-    if old_song and not app_state["loop"]:
-        cleanup_song(old_song)
-    elif old_song and app_state["loop"]:
-        # Looptaysa silme, tekrar oynatılacak
-        pass
+    if old_song:
+        if force_cleanup or not app_state["loop"]:
+            cleanup_song(old_song)
+        # Looptaysa ve force_cleanup kapalıysa silme, tekrar oynatılacak
 
     if not app_state["queue"]:
         app_state["current_song"] = None
@@ -375,7 +411,7 @@ async def websocket_endpoint(ws: WebSocket):
                 print("⏭️  Şarkı geçiliyor...")
                 if bot_callback:
                     await bot_callback("stop", {})  # Bot'ta durdur ve sıfırla
-                asyncio.create_task(play_next())
+                asyncio.create_task(play_next(force_cleanup=True))
 
             # ── Stop (Durdur/Reset) ─────────────────────────
             elif msg_type == "stop":
@@ -493,6 +529,16 @@ async def websocket_endpoint(ws: WebSocket):
                     }))
                     continue
 
+                import re
+                match = re.search(r"https://meet\.google\.com/[a-z0-9\-]+", link, re.IGNORECASE)
+                if not match:
+                    await ws.send_text(json.dumps({
+                        "type": "error", "message": "Geçersiz Meet linki"
+                    }))
+                    continue
+                
+                link = match.group(0) # Fazlalıkları sil
+
                 print(f"🔗  Meet bağlantı isteği: {link}")
                 app_state["meet_link"] = link
                 app_state["bot_status"] = "connecting"
@@ -522,6 +568,13 @@ async def websocket_endpoint(ws: WebSocket):
             # ── Şarkı kaldır ───────────────────────────────
             elif msg_type == "remove_song":
                 song_id = msg.get("id")
+                
+                # Silinecek şarkıyı bul ve temizle
+                song_to_remove = next((s for s in app_state["queue"] if s["id"] == song_id), None)
+                if song_to_remove:
+                    song_to_remove["_removed"] = True
+                    cleanup_song(song_to_remove)
+                    
                 original_len = len(app_state["queue"])
                 app_state["queue"] = [s for s in app_state["queue"] if s["id"] != song_id]
                 if len(app_state["queue"]) < original_len:

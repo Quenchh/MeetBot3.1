@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 websockets
-yt-dlp
 playwright
 playwright-stealth
 aiofiles
+yt-dlp

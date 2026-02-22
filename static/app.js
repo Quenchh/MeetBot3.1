@@ -146,16 +146,14 @@
 
     function doAdminLogin() {
         const password = adminPasswordInput.value.trim();
-        if (password === "xasimaymun123") {
+        if (password === "password123") {
             isAdmin = true;
-            // adminPanel.classList.remove("hidden"); // Removed
             adminModalOverlay.classList.add("hidden");
 
-            // Update Admin Button Style (Tailwind)
-            adminToggleBtn.classList.remove("text-gray-400");
-            adminToggleBtn.classList.add("text-indigo-500", "font-bold");
-            adminToggleBtn.querySelector("div").classList.add("bg-indigo-500/10", "border-indigo-500/50");
-            adminToggleBtn.querySelector("i").classList.add("text-indigo-500");
+            // Update Admin Button Style (Vaporwave)
+            adminToggleBtn.classList.remove("text-teal");
+            adminToggleBtn.classList.add("text-fuchsia", "font-bold", "drop-shadow-[0_0_5px_var(--fuchsia)]");
+            adminToggleBtn.querySelector("span.material-symbols-outlined").classList.add("text-fuchsia");
 
             showToast("Admin girişi başarılı", "success");
         } else {
@@ -287,11 +285,15 @@
 
         if (state.queue.length === 0) {
             queueList.innerHTML = `
-                <div class="flex-1 flex flex-col items-center justify-center text-gray-500 h-full mt-12">
-                     <div class="mb-4 text-[#1a1a1a]">
-                        <i class="fa-solid fa-music text-7xl text-[#181818]"></i>
-                     </div>
-                     <p class="text-gray-500 text-md font-medium">Kuyruk boş <span class="text-gray-700 mx-2">—</span> YouTube linki ekleyin</p>
+                <div class="flex-1 flex flex-col items-center justify-center text-center opacity-80 h-full mt-20">
+                    <div class="relative mb-8">
+                        <span class="material-symbols-outlined text-[120px] text-teal opacity-50 absolute -top-4 -left-4 font-black text-[var(--teal)]">music_note</span>
+                        <span class="material-symbols-outlined text-[120px] text-fuchsia opacity-50 absolute top-4 left-4 font-black text-[var(--fuchsia)]">music_note</span>
+                        <span class="material-symbols-outlined text-[120px] text-white">music_note</span>
+                    </div>
+                    <p class="text-4xl font-['Saira_Condensed'] font-bold tracking-tighter text-sunset glitch-text uppercase">
+                        Kuyruk boş — YouTube linki ekleyin
+                    </p>
                 </div>`;
             return;
         }
@@ -299,24 +301,24 @@
         queueList.innerHTML = "";
         state.queue.forEach((song, i) => {
             const item = document.createElement("div");
-            item.className = "queue-item bg-[#121212] border border-[#2a2a2a] p-3 rounded-lg flex items-center justify-between group hover:border-[#444] hover:bg-[#1a1a1a] transition-all cursor-move mb-2";
+            item.className = "queue-item v-window p-3 flex items-center justify-between group cursor-move mb-3 border-teal/50 hover:border-fuchsia hover:bg-fuchsia/10 transition-all shrink-0";
             item.draggable = true;
             item.dataset.id = song.id;
 
             item.innerHTML = `
-                <div class="flex items-center gap-3 overflow-hidden">
-                    <div class="text-[#444] font-mono text-xs w-6 text-center select-none">${i + 1}</div>
+                <div class="flex items-center gap-4 overflow-hidden w-full">
+                    <div class="text-teal font-['VT323'] text-2xl w-8 text-center select-none drop-shadow-[0_0_2px_var(--teal)]">${i + 1}</div>
                     <div class="flex-1 min-w-0">
-                        <div class="text-gray-300 text-sm font-medium truncate" title="${escapeHtml(song.title)}">${escapeHtml(song.title)}</div>
-                        <div class="text-[11px] text-[#666] flex items-center gap-2 mt-0.5">
-                            <span><i class="fa-regular fa-clock text-[10px]"></i> ${song.duration_str}</span>
-                            <span class="w-1 h-1 rounded-full bg-[#333]"></span>
-                            <span><i class="fa-regular fa-user text-[10px]"></i> ${escapeHtml(song.added_by)}</span>
+                        <div class="text-white text-lg font-['Saira_Condensed'] font-bold truncate tracking-wide" title="${escapeHtml(song.title)}">${escapeHtml(song.title)}</div>
+                        <div class="text-sm text-sunset font-mono flex items-center gap-3 mt-1 opacity-80">
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> ${song.duration_str}</span>
+                            <span class="w-1.5 h-1.5 rounded-none bg-fuchsia"></span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> ${escapeHtml(song.added_by)}</span>
                         </div>
                     </div>
                 </div>
-                <button class="queue-remove text-[#444] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 bg-[#1a1a1a] rounded-lg border border-[#333] hover:border-red-900/50" title="Kaldır">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
+                <button class="queue-remove text-sunset hover:text-fuchsia hover:scale-110 opacity-0 group-hover:opacity-100 transition-all p-2 ml-4 shrink-0" title="Kaldır">
+                    <span class="material-symbols-outlined text-3xl">delete</span>
                 </button>
             `;
 
@@ -394,7 +396,7 @@
             npTitle.textContent = state.current_song.title;
             // npTitle.classList.remove("np-idle"); // Tailwind'de gerek yok
 
-            const icon = state.playback_state === "playing" ? '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+            const icon = state.playback_state === "playing" ? '<span class="material-symbols-outlined text-sm align-middle">play_arrow</span>' : '<span class="material-symbols-outlined text-sm align-middle">pause</span>';
             const text = state.playback_state === "playing" ? "OYNATILIYOR" : "DURAKLATILDI";
 
             npStatus.innerHTML = `${icon} ${text}`;
@@ -430,8 +432,13 @@
         btnSkip.disabled = !hasSong;
 
         // Loop butonu rengi
-        if (state.loop) btnLoop.classList.add("text-indigo-400");
-        else btnLoop.classList.remove("text-indigo-400");
+        if (state.loop) {
+            btnLoop.classList.remove("text-teal", "opacity-50");
+            btnLoop.classList.add("text-fuchsia", "opacity-100");
+        } else {
+            btnLoop.classList.remove("text-fuchsia", "opacity-100");
+            btnLoop.classList.add("text-teal", "opacity-50");
+        }
     }
 
     function renderVolume() {
@@ -448,13 +455,11 @@
     }
 
     function renderBotStatus() {
-        // statusDot.className = "status-indicator " + state.bot_status; // Eski CSS
-
         // Tailwind renkleri
-        statusDot.className = "w-1.5 h-1.5 rounded-full " +
-            (state.bot_status === "connected" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" :
-                state.bot_status === "connecting" ? "bg-yellow-500 animate-pulse" :
-                    "bg-red-500");
+        statusDot.className = "w-2 h-2 rounded-full " +
+            (state.bot_status === "connected" ? "bg-teal shadow-[0_0_8px_var(--teal)]" :
+                state.bot_status === "connecting" ? "bg-sunset animate-pulse shadow-[0_0_8px_var(--sunset)]" :
+                    "bg-red-500 shadow-[0_0_8px_#ef4444]");
 
         const labels = {
             disconnected: "Bağlı Değil",
@@ -472,8 +477,7 @@
 
             meetJoinBtn.disabled = false;
             meetJoinBtn.textContent = "Değiştir";
-            // Neutral Style for "Change"
-            meetJoinBtn.className = "bg-[#222] hover:bg-[#333] text-gray-200 text-sm font-medium px-5 py-2 rounded-lg transition-colors border border-[#333] disabled:opacity-50 disabled:cursor-not-allowed";
+            meetJoinBtn.className = "vapor-btn px-6 py-2 font-['Saira_Condensed'] font-bold text-lg opacity-70";
             meetJoinBtn.classList.remove("hidden");
 
             meetLeaveBtn.classList.remove("hidden");
@@ -481,26 +485,25 @@
         } else if (state.bot_status === "connecting") {
             meetInput.disabled = true;
             meetJoinBtn.disabled = true;
-            meetJoinBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            meetJoinBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-xl">sync</span>';
             meetLeaveBtn.classList.add("hidden");
         } else {
             // Disconnected
             meetInput.disabled = false;
             meetJoinBtn.disabled = false;
             meetJoinBtn.textContent = "Katıl";
-            // Neutral Style for "Join"
-            meetJoinBtn.className = "bg-[#222] hover:bg-[#333] text-gray-200 text-sm font-medium px-5 py-2 rounded-lg transition-colors border border-[#333] disabled:opacity-50 disabled:cursor-not-allowed";
+            meetJoinBtn.className = "vapor-btn px-6 py-2 font-['Saira_Condensed'] font-bold text-lg";
             meetLeaveBtn.classList.add("hidden");
         }
     }
 
     function renderMicButton() {
         if (state.mic_muted) {
-            btnToggleMic.className = "w-full bg-red-900/10 hover:bg-red-900/20 text-red-500 text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-colors border border-red-900/30";
-            btnToggleMic.innerHTML = '<i class="fa-solid fa-microphone-slash"></i> Mikrofon KAPALI';
+            btnToggleMic.className = "w-full border-2 border-fuchsia p-3 flex items-center justify-center gap-2 bg-fuchsia/10 hover:bg-fuchsia/20 transition-colors";
+            btnToggleMic.innerHTML = `<span class="material-symbols-outlined">mic_off</span> <span class="font-['Saira_Condensed'] font-bold text-xl uppercase text-fuchsia glitch-text">Mikrofon KAPALI</span>`;
         } else {
-            btnToggleMic.className = "w-full bg-[#2a2a35] hover:bg-[#323240] text-indigo-200 text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-colors border border-[#353545]";
-            btnToggleMic.innerHTML = '<i class="fa-solid fa-microphone"></i> Mikrofon AÇIK';
+            btnToggleMic.className = "w-full border-2 border-teal p-3 flex items-center justify-center gap-2 bg-teal/10 hover:bg-teal/20 transition-colors";
+            btnToggleMic.innerHTML = `<span class="material-symbols-outlined">mic</span> <span class="font-['Saira_Condensed'] font-bold text-xl uppercase">Mikrofon AÇIK</span>`;
         }
     }
 
@@ -513,9 +516,14 @@
             return showToast("Bu işlem için yönetici yetkisi gerekli!", "error");
         }
 
-        const link = meetInput.value.trim();
+        let link = meetInput.value.trim();
         if (!link) return showToast("Meet linki girin!", "error");
-        if (!link.includes("meet.google.com")) return showToast("Geçersiz Meet linki!", "error");
+
+        const meetRegex = /https:\/\/meet\.google\.com\/[a-z0-9-]+/i;
+        const match = link.match(meetRegex);
+        if (!match) return showToast("Geçersiz Meet linki!", "error");
+
+        link = match[0]; // Sadece geçerli linki alarak fazlalıkları siliyoruz.
 
         // Eğer zaten bağlıysa ve farklı bir link girildiyse "join_meet" yine çalışır, bot.py yeni linke gider.
         send({ type: "join_meet", link });
@@ -551,7 +559,7 @@
         send({ type: "add_song", url, added_by: username });
         ytInput.value = "";
         addSongBtn.disabled = true;
-        addSongBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        addSongBtn.innerHTML = '<span class="material-symbols-outlined animate-spin align-middle">sync</span>';
         setTimeout(() => {
             addSongBtn.disabled = false;
             addSongBtn.textContent = "Ekle";

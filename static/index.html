@@ -4,245 +4,353 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>MeetBot 2.0 Dashboard</title>
-    <!-- Tailwind CSS v3 with plugins -->
+    <title>MeetBot 2.0 - Vaporwave Dreamscape</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <!-- FontAwesome for Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
-    <!-- Tailwind Configuration -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        dark: {
-                            bg: '#050505',
-                            card: '#0f0f0f',
-                            border: '#2a2a2a',
-                            input: '#1e1e1e',
-                            inputBorder: '#333333',
-                        },
-                        accent: {
-                            purple: '#4f46e5',
-                            purpleHover: '#4338ca',
-                            redText: '#ef4444',
-                            redBg: 'rgba(239, 68, 68, 0.15)',
-                            micBtn: '#252630',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@400;700;900&family=VT323&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css"> <!-- For Toasts and custom overrides -->
-    <style data-purpose="custom-components">
-        /* Custom styling removed - simplified to Tailwind standard */
+    <style type="text/tailwindcss">
+        :root {
+            --fuchsia: #ff00ff;
+            --teal: #00f2ff;
+            --sunset: #ff8c00;
+            --purple: #4b0082;
+            --grid-color: rgba(0, 242, 255, 0.2);
+        }
+        body {
+            background-color: var(--purple);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-attachment: fixed;
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+        }
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .v-window {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--teal);
+            box-shadow: 8px 8px 0px var(--fuchsia);
+        }
+        .v-header {
+            background: linear-gradient(90deg, var(--teal), var(--fuchsia));
+            font-family: 'Saira Condensed', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .crt-monitor {
+            position: relative;
+            background: #111;
+            border: 20px solid #333;
+            border-radius: 40px;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5), 0 0 20px var(--teal);
+            overflow: hidden;
+        }
+        .crt-monitor::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 100%), 
+                        linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+        .glitch-text {
+            text-shadow: 2px 0 var(--fuchsia), -2px 0 var(--teal);
+        }
+        .vapor-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--sunset);
+            color: var(--sunset);
+        }
+        .vapor-btn {
+            background: var(--fuchsia);
+            box-shadow: 4px 4px 0px var(--teal);
+            transition: all 0.1s;
+        }
+        .vapor-btn:active, .vapor-btn:disabled {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--teal);
+        }
+        .vapor-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #444;
+            box-shadow: 4px 4px 0px #222;
+        }
+        .deco-statue {
+            opacity: 0.3;
+            filter: grayscale(1) contrast(200%) brightness(1.5) sepia(1) hue-rotate(250deg);
+            position: fixed;
+            bottom: -50px;
+            right: 0;
+            z-index: -1;
+            width: 400px;
+        }
+        .modal-overlay {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        /* Custom scrollbar for crt monitor */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--fuchsia);
+            border-radius: 4px;
+        }
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined' !important;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
     </style>
 </head>
 
-<body
-    class="bg-[#050505] text-white font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white overflow-hidden">
+<body class="p-6 md:p-10 text-white min-h-screen">
+    <div class="scanlines"></div>
+    <img alt="statue" class="deco-statue select-none pointer-events-none"
+        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDinD4lX-3S2SIgEokCK5q-F1T9PxOUZw4ISydZW_mL62LSsq4xF6zwZ6RvzRjH_66r_aceivtsIbnI2Jsz14mEW5vOJ62QPA9qLWXdGFUvTqmf83W-4tWEV-VVw2D-W6CDQoem4WNkFgHlUEgn0YRHs0Mbx2U29V1eUr4w8StjgWDbnyQIEPNHPhaML-RN1iDAh38t6pXL6Sy4B1OovJwh_BkDM_h-RgT-qljonATq9D68wW6c2MVtK0wV4NFp7UVyyJB3y_D7VZhj" />
 
-    <!-- ── Login Modal (Tailwind) ── -->
-    <div id="login-overlay" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div class="bg-[#0f0f0f] border border-[#2a2a2a] p-8 rounded-2xl w-96 shadow-2xl text-center">
-            <h1 class="text-2xl font-bold text-indigo-500 mb-2">MeetBot 2.0</h1>
-            <p class="text-gray-500 mb-6 text-sm">Grup Müzik Deneyimi</p>
+    <!-- ── Login Modal (Vaporwave) ── -->
+    <div id="login-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center">
+        <div class="v-window p-8 rounded-2xl w-96 text-center transform hover:scale-[1.02] transition-transform">
+            <h1 class="font-['Saira_Condensed'] text-4xl font-black italic glitch-text mb-2">MeetBot 2.0</h1>
+            <p class="text-teal mb-6 font-mono text-xl tracking-widest">ENTER THE GRID</p>
             <input type="text" id="login-username"
-                class="w-full bg-[#1e1e1e] border border-[#333] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 mb-2 transition-all"
+                class="vapor-input font-mono w-full px-4 py-3 mb-2 focus:outline-none focus:border-teal transition-all text-xl placeholder-sunset/50"
                 placeholder="Kullanıcı adınız..." autofocus>
-            <div id="login-error" class="text-red-500 text-sm mb-4 min-h-[20px]"></div>
+            <div id="login-error"
+                class="text-fuchsia text-lg mb-4 min-h-[20px] font-bold drop-shadow-[0_0_5px_var(--fuchsia)]"></div>
             <button id="login-btn"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-colors">Giriş
+                class="vapor-btn w-full py-3 font-['Saira_Condensed'] font-bold text-2xl tracking-widest uppercase">Giriş
                 Yap</button>
         </div>
     </div>
 
-    <!-- ── Admin Modal (Tailwind) ── -->
-    <div id="admin-modal-overlay"
-        class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-[#0f0f0f] border border-[#2a2a2a] p-8 rounded-2xl w-96 shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-2">Yönetici Girişi</h3>
-            <p class="text-gray-500 mb-6 text-sm">Admin şifresini girin.</p>
+    <!-- ── Admin Modal (Vaporwave) ── -->
+    <div id="admin-modal-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center hidden">
+        <div class="v-window p-8 rounded-2xl w-96 transform -rotate-1">
+            <h3 class="font-['Saira_Condensed'] text-3xl font-black italic glitch-text mb-2">Yönetici Girişi</h3>
+            <p class="text-teal mb-6 text-xl tracking-widest">ROOT ACCESS REQUIRED</p>
             <input type="password" id="admin-password"
-                class="w-full bg-[#1e1e1e] border border-[#333] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 mb-2 transition-all"
+                class="vapor-input font-mono w-full px-4 py-3 mb-2 focus:outline-none focus:border-fuchsia transition-all text-xl"
                 placeholder="Şifre...">
-            <div id="admin-error" class="text-red-500 text-sm mb-4 min-h-[20px]"></div>
-            <div class="flex gap-3">
+            <div id="admin-error"
+                class="text-fuchsia text-lg mb-4 min-h-[20px] font-bold drop-shadow-[0_0_5px_var(--fuchsia)]"></div>
+            <div class="flex gap-4">
                 <button id="admin-login-btn"
-                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors">Giriş</button>
+                    class="vapor-btn flex-1 py-2 font-['Saira_Condensed'] font-bold text-xl uppercase">Giriş</button>
                 <button id="admin-cancel-btn"
-                    class="flex-1 bg-[#1e1e1e] hover:bg-[#2a2a2a] text-gray-300 font-medium py-2.5 rounded-xl transition-colors border border-[#333]">İptal</button>
+                    class="flex-1 border-2 border-sunset text-sunset hover:bg-sunset/20 font-['Saira_Condensed'] font-bold text-xl uppercase transition-colors">İptal</button>
             </div>
         </div>
     </div>
 
     <!-- ── Main App (Hidden by default until login) ── -->
-    <div id="app" class="flex-1 flex flex-col h-full hidden">
-
-        <!-- Header -->
-        <header class="w-full flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] bg-[#050505]">
-            <div class="flex items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-music text-gray-400 text-xl"></i>
-                    <h1 class="text-xl font-bold tracking-tight">MeetBot <span
-                            class="text-gray-500 font-normal">2.0</span></h1>
-                </div>
-                <!-- Status -->
-                <span
-                    class="ml-4 px-3 py-1 bg-[#2a0a0a] text-gray-400 text-xs font-medium rounded-full flex items-center gap-1.5 border border-white/10">
-                    <span id="status-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+    <div id="app" class="h-full hidden flex-col relative z-10 w-full max-w-[1600px] mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full mt-2">
+            <div
+                class="flex items-center gap-4 bg-black/40 p-4 border-l-4 border-fuchsia transform -rotate-1 shadow-lg">
+                <span class="material-symbols-outlined text-4xl text-fuchsia">music_note</span>
+                <h1 class="font-['Saira_Condensed'] text-5xl font-black italic glitch-text">MeetBot <span
+                        class="text-3xl text-teal opacity-80">2.0</span></h1>
+                <div
+                    class="flex items-center gap-2 bg-red-600 px-3 py-1 text-sm font-bold uppercase tracking-tighter shadow-[4px_4px_0_#000] ml-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-black"></span>
                     <span id="status-text">Bağlı Değil</span>
-                </span>
-            </div>
-
-            <!-- Meet Link Area -->
-            <div class="flex items-center gap-3">
-                <div class="relative">
-                    <input id="meet-link-input"
-                        class="bg-[#121212] border border-[#2a2a2a] text-gray-400 text-sm rounded-lg px-4 py-2 w-96 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-gray-600"
-                        placeholder="https://meet.google.com/..." type="text" />
                 </div>
-                <button id="meet-join-btn"
-                    class="bg-[#222] hover:bg-[#333] text-gray-200 text-sm font-medium px-5 py-2 rounded-lg transition-colors border border-[#333] disabled:opacity-50 disabled:cursor-not-allowed">
-                    Katıl
-                </button>
-                <button id="meet-leave-btn"
-                    class="hidden bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-5 py-2 rounded-lg transition-all shadow-[0_0_10px_rgba(220,38,38,0.5)] hover:shadow-[0_0_20px_rgba(220,38,38,0.7)] border border-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Ayrıl
-                </button>
             </div>
 
-            <!-- User Area -->
-            <div class="flex items-center gap-6">
+            <div class="v-window p-2 flex gap-4 items-center transform rotate-1 w-full md:w-auto">
+                <input id="meet-link-input" class="vapor-input font-mono text-sm px-4 py-2 w-full md:w-80" type="text"
+                    placeholder="https://meet.google.com/..." />
+                <button id="meet-join-btn"
+                    class="vapor-btn px-6 py-2 font-['Saira_Condensed'] font-bold text-lg">Katıl</button>
+                <button id="meet-leave-btn"
+                    class="hidden bg-red-600 hover:bg-red-500 text-white px-6 py-2 font-['Saira_Condensed'] font-bold text-lg border-2 border-black shadow-[4px_4px_0_#000]">Ayrıl</button>
+            </div>
+
+            <div class="flex gap-4 font-['Saira_Condensed'] text-xl">
                 <button id="admin-toggle-btn"
-                    class="flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer transition-colors focus:outline-none">
-                    <div
-                        class="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center border border-[#2a2a2a]">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <span class="text-sm font-medium">Admin</span>
+                    class="flex items-center gap-2 border-b-2 border-teal pb-1 hover:text-fuchsia transition-colors outline-none">
+                    <span class="material-symbols-outlined">person</span>
+                    <span>Admin</span>
                 </button>
-                <div class="flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer transition-colors">
-                    <div
-                        class="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center border border-[#2a2a2a]">
-                        <i class="fa-regular fa-user"></i>
-                    </div>
-                    <span id="user-badge-name" class="text-sm font-medium">--</span>
+                <div class="flex items-center gap-2 border-b-2 border-fuchsia pb-1 text-white opacity-80">
+                    <span class="material-symbols-outlined text-fuchsia">account_circle</span>
+                    <span id="user-badge-name" class="tracking-wide">--</span>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 flex p-6 gap-6 overflow-hidden">
-            <!-- Sidebar Column -->
-            <aside class="w-[420px] flex-shrink-0 flex flex-col gap-4">
-
-                <!-- Şarkı Ekle -->
-                <div class="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-6">
-                    <h3 class="text-[#666] text-xs font-bold uppercase tracking-wider mb-4">ŞARKI EKLE</h3>
-                    <div class="flex flex-col gap-3">
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+            <div class="lg:col-span-3 space-y-6">
+                <section class="v-window overflow-hidden transform hover:scale-[1.02] transition-transform">
+                    <div class="v-header px-4 py-1 text-black font-bold text-sm">ŞARKI EKLE</div>
+                    <div class="p-5 space-y-4">
                         <input id="yt-link-input"
-                            class="w-full bg-[#121212] border border-[#2a2a2a] rounded-lg px-4 py-3 text-base text-gray-300 placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 transition-colors"
-                            placeholder="YouTube linki yapıştır...." type="text" />
+                            class="vapor-input w-full p-3 font-mono text-lg outline-none placeholder:text-sunset/50 focus:border-fuchsia focus:ring-1 focus:ring-fuchsia"
+                            placeholder="YouTube linki yapıştır..." type="text" />
                         <button id="add-song-btn"
-                            class="w-full bg-[#222] hover:bg-[#333] text-gray-200 text-base font-medium py-3 rounded-lg transition-colors border border-[#333]">
-                            Ekle
+                            class="vapor-btn w-full py-3 font-['Saira_Condensed'] font-bold text-2xl uppercase tracking-widest">Ekle</button>
+                    </div>
+                </section>
+
+                <section class="v-window overflow-hidden transform -rotate-1">
+                    <div
+                        class="v-header px-4 py-1 text-black font-bold text-sm bg-gradient-to-r from-sunset to-fuchsia">
+                        ŞU AN ÇALAN</div>
+                    <div class="p-6 text-center">
+                        <p id="np-title"
+                            class="text-2xl font-['Saira_Condensed'] font-bold min-h-[64px] text-teal animate-pulse line-clamp-2 mb-2 break-words">
+                            Şarkı çalmıyor</p>
+                        <div class="flex justify-between items-center text-sunset mt-4 border-t border-sunset/30 pt-3">
+                            <div id="np-status"
+                                class="text-sm uppercase tracking-widest font-bold opacity-0 flex items-center gap-1">
+                                ...</div>
+                            <div id="np-time" class="font-mono text-md">--:-- / --:--</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-6 relative flex flex-col h-full min-h-[500px]">
+                <div class="v-window mb-4 transform -rotate-1 self-start px-8 py-2 border-sunset relative z-20">
+                    <h2
+                        class="font-['Saira_Condensed'] text-3xl font-black italic flex items-center gap-4 drop-shadow-[2px_2px_0_var(--purple)]">
+                        Sıradaki Şarkılar
+                        <span id="queue-count"
+                            class="bg-sunset text-black px-3 py-1 text-xl not-italic rounded-full shadow-[2px_2px_0_var(--fuchsia)] font-mono">0</span>
+                    </h2>
+                </div>
+
+                <div class="crt-monitor flex-1 flex flex-col relative overflow-hidden h-full z-10">
+                    <div class="relative z-10 p-6 flex-1 flex flex-col overflow-hidden h-full">
+
+                        <div id="queue-list"
+                            class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar pr-4 z-20 absolute inset-0 p-6">
+                            <!-- Javascript will inject queue items here -->
+                            <div
+                                class="flex-1 flex flex-col items-center justify-center text-center opacity-80 h-full mt-20">
+                                <div class="relative mb-8">
+                                    <span
+                                        class="material-symbols-outlined text-[100px] text-teal opacity-50 absolute -top-4 -left-4 font-black">music_note</span>
+                                    <span
+                                        class="material-symbols-outlined text-[100px] text-fuchsia opacity-50 absolute top-4 left-4 font-black">music_note</span>
+                                    <span class="material-symbols-outlined text-[100px] text-white">music_note</span>
+                                </div>
+                                <p
+                                    class="text-3xl font-['Saira_Condensed'] font-bold tracking-tighter text-sunset glitch-text uppercase">
+                                    Kuyruk boş — YouTube linki ekleyin
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="absolute inset-0 opacity-10 pointer-events-none"
+                        style="background-image: linear-gradient(var(--teal) 2px, transparent 2px), linear-gradient(90deg, var(--teal) 2px, transparent 2px); background-size: 30px 30px; transform: perspective(500px) rotateX(60deg) translateY(200px);">
+                    </div>
+                </div>
+
+                <div
+                    class="hidden xl:block absolute -bottom-10 -right-10 v-window p-4 w-48 h-48 transform flex items-center rotate-12 opacity-80 border-sunset z-0">
+                    <div
+                        class="text-[9px] text-sunset uppercase tracking-tighter h-full font-mono break-words leading-tight">
+                        SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
+                        SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
+                        SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-6">
+                <section class="v-window overflow-hidden border-sunset">
+                    <div class="v-header px-4 py-1 text-black font-bold text-sm bg-sunset">OYNATMA KONTROLLERİ</div>
+                    <div class="p-6">
+                        <div class="flex justify-center gap-4 mb-8">
+                            <button id="btn-resume"
+                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">play_arrow</button>
+                            <button id="btn-pause"
+                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white hidden">pause</button>
+                            <button id="btn-stop"
+                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-unset hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">stop</button>
+                            <button id="btn-skip"
+                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">skip_next</button>
+                            <button id="btn-loop"
+                                class="material-symbols-outlined text-4xl text-teal opacity-50 hover:opacity-100 hover:text-teal transition-all hover:scale-110">repeat</button>
+                        </div>
+                        <button id="btn-toggle-mic"
+                            class="w-full border-2 border-teal p-3 flex items-center justify-center gap-2 bg-teal/10 hover:bg-teal/20 transition-colors">
+                            <span class="material-symbols-outlined">mic</span>
+                            <span class="font-['Saira_Condensed'] font-bold text-lg uppercase">Mikrofon AÇIK</span>
                         </button>
                     </div>
-                </div>
+                </section>
 
-                <!-- Şu An Çalan -->
-                <div class="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-6">
-                    <h3 class="text-[#666] text-xs font-bold uppercase tracking-wider mb-4">ŞU AN ÇALAN</h3>
-                    <div class="flex flex-col gap-1">
-                        <div id="np-title" class="text-white text-xl font-bold leading-tight line-clamp-2">Şarkı
-                            çalmıyor</div>
-                        <div class="flex justify-between items-center mt-3">
-                            <div id="np-status"
-                                class="text-indigo-400 text-sm font-semibold uppercase tracking-wide opacity-0">...
+                <section class="v-window overflow-hidden border-fuchsia transform rotate-1">
+                    <div class="v-header px-4 py-1 text-black font-bold text-sm bg-fuchsia">SES KONTROLLERİ</div>
+                    <div class="p-6 space-y-8">
+                        <div class="space-y-3">
+                            <div
+                                class="flex justify-between text-lg font-['Saira_Condensed'] font-bold tracking-widest text-teal">
+                                <span class="text-xs mt-1">MÜZİK SESİ</span>
+                                <span id="music-volume-value" class="font-mono text-base">80%</span>
                             </div>
-                            <div id="np-time" class="text-gray-500 text-sm font-mono">--:-- / --:--</div>
+                            <input id="music-volume-slider"
+                                class="w-full h-3 accent-fuchsia bg-black appearance-none rounded-none border-2 border-teal/40 cursor-pointer outline-none"
+                                type="range" max="100" min="0" value="80" />
+                        </div>
+                        <div class="space-y-3">
+                            <div
+                                class="flex justify-between text-lg font-['Saira_Condensed'] font-bold tracking-widest text-sunset">
+                                <span class="text-xs mt-1">MİKROFON ÇIKIŞ SESİ</span>
+                                <span id="mic-volume-value" class="font-mono text-base">80%</span>
+                            </div>
+                            <input id="mic-volume-slider"
+                                class="w-full h-3 accent-sunset bg-black appearance-none rounded-none border-2 border-fuchsia/40 cursor-pointer outline-none"
+                                type="range" max="100" min="0" value="80" />
                         </div>
                     </div>
-                </div>
-
-                <!-- Oynatma Kontrolleri -->
-                <div class="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-6">
-                    <h3 class="text-[#666] text-xs font-bold uppercase tracking-wider mb-5">OYNATMA KONTROLLERİ</h3>
-                    <div class="flex items-center justify-between px-4 mb-6">
-                        <button id="btn-resume" class="text-gray-400 hover:text-white transition-colors p-2 text-2xl"><i
-                                class="fa-solid fa-play"></i></button>
-                        <button id="btn-pause"
-                            class="text-gray-400 hover:text-white transition-colors p-2 text-2xl hidden"><i
-                                class="fa-solid fa-pause"></i></button>
-                        <button id="btn-stop" class="text-gray-400 hover:text-white transition-colors p-2 text-xl"><i
-                                class="fa-solid fa-stop"></i></button>
-                        <button id="btn-skip" class="text-gray-400 hover:text-white transition-colors p-2 text-xl"><i
-                                class="fa-solid fa-forward-step"></i></button>
-                        <button id="btn-loop" class="text-gray-400 hover:text-white transition-colors p-2 text-xl"><i
-                                class="fa-solid fa-repeat"></i></button>
-                    </div>
-                    <button id="btn-toggle-mic"
-                        class="w-full bg-[#2a2a35] hover:bg-[#323240] text-indigo-200 text-base font-medium py-4 rounded-lg flex items-center justify-center gap-2 transition-colors border border-[#353545]">
-                        <i class="fa-solid fa-microphone"></i> <span>Mikrofon AÇIK</span>
-                    </button>
-                </div>
-
-                <!-- Ses Kontrolleri -->
-                <div class="bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-6">
-                    <h3 class="text-[#666] text-xs font-bold uppercase tracking-wider mb-5">SES KONTROLLERİ</h3>
-                    <div class="mb-6">
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="text-sm text-gray-400 font-medium">Müzik Sesi</label>
-                            <span id="music-volume-value" class="text-sm text-gray-500">80%</span>
-                        </div>
-                        <input id="music-volume-slider"
-                            class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-white"
-                            max="100" min="0" type="range" value="80" />
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="text-sm text-gray-400 font-medium">Mikrofon Çıkış</label>
-                            <span id="mic-volume-value" class="text-sm text-gray-500">80%</span>
-                        </div>
-                        <input id="mic-volume-slider"
-                            class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-white"
-                            max="100" min="0" type="range" value="80" />
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content Column (Queue) -->
-            <section
-                class="flex-1 bg-[#0a0a0a] border border-[#1a1a1a] rounded-xl p-6 flex flex-col relative overflow-hidden">
-                <div class="flex items-center gap-2 mb-6">
-                    <h2 class="text-white font-bold text-lg">Sıradaki Şarkılar</h2>
-                    <span id="queue-count"
-                        class="bg-[#2a2a2a] text-gray-300 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
-                </div>
-
-                <!-- Queue List -->
-                <div id="queue-list" class="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2">
-                    <!-- Javascript will inject here -->
-                    <div class="flex-1 flex flex-col items-center justify-center text-gray-500 h-full">
-                        <div class="mb-6 text-[#1a1a1a]">
-                            <i class="fa-solid fa-music text-8xl text-[#222]"></i>
-                        </div>
-                        <p class="text-gray-400 text-lg font-medium">Kuyruk boş <span
-                                class="text-gray-600 mx-2">—</span> YouTube linki ekleyin</p>
-                    </div>
-                </div>
-            </section>
+                </section>
+            </div>
         </main>
+
+        <footer
+            class="mt-20 border-t-2 border-dashed border-teal/30 pt-4 pb-8 flex justify-between items-center text-xs opacity-50 uppercase tracking-[0.5em] font-['Saira_Condensed'] w-full">
+            <span>Dreamscape OS v.2.0.84</span>
+            <div class="flex gap-4">
+                <span class="w-3 h-3 bg-fuchsia rounded-none"></span>
+                <span class="w-3 h-3 bg-teal rounded-none"></span>
+                <span class="w-3 h-3 bg-sunset rounded-none"></span>
+            </div>
+            <span>Est. 198X</span>
+        </footer>
     </div>
 
     <!-- Toast Container -->
     <div class="fixed bottom-10 right-10 flex flex-col gap-3 z-50 pointer-events-none" id="toast-container"></div>
 
-    <script src="/static/app.js?v=5.1"></script>
+    <script src="/static/app.js?v=6.0"></script>
 </body>
 
 </html>

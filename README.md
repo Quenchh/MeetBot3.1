@@ -1,46 +1,63 @@
-# 🎵 MeetBot 4.0 — Google Meet Müzik Botu
+<div align="center">
 
-MeetBot, Google Meet toplantılarına katılarak yüksek kaliteli ses paylaşımı yapan ve grup müzik deneyimi sunan modern bir bottur. Playwright tabanlı tarayıcı otomasyonu ve FastAPI tabanlı gerçek zamanlı web kontrol paneli (dashboard) ile donatılmıştır.
+# 🎵 MeetBot 4.0 
+**Google Meet Müzik ve Ses Botu**
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat&logo=playwright&logoColor=white)](https://playwright.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+*Google Meet toplantılarına katılıp doğrudan tarayıcı içinden, mikrofonu meşgul etmeden, yüksek kaliteli stüdyo sesiyle müzik paylaşımı yapan modern, asenkron ve otonom bir bot.*
+
+---
+
+</div>
 
 ## 🚀 Öne Çıkan Özellikler
 
-- **Modern Web Dashboard:** Kullanıcı dostu, karanlık mod destekli ve gerçek zamanlı (WebSocket) kontrol paneli.
-- **Kolay Müzik Kuyruğu:** YouTube linklerini doğrudan yapıştırarak sıraya şarkı ekleme.
-- **Gelişmiş Ses Kontrolü:** 
-    - Müzik ve mikrofon için ayrı ses seviyesi ayarları.
-    - "Gürültü Giderme" (Noise Cancellation) özelliğini otomatik olarak devre dışı bırakma (daha temiz müzik iletimi için).
-- **Tam Denetim:** Oynat, Duraklat, Durdur, Geç ve Döngü (Loop) modları.
-- **Web Audio API Enjeksiyonu:** Sesi doğrudan tarayıcı içerisinden, sistem sesini meşgul etmeden yüksek kalitede iletir.
-- **Hızlı Kurulum:** Tek bir komutla ayağa kalkan sunucu ve bot yapısı.
+- 🎛️ **Modern Web Dashboard:** Neon Synthwave/Vaporwave estetiğine sahip, duyarlı ve gerçek zamanlı (WebSocket tabanlı) kontrol paneli.
+- 🎶 **Sonsuz Müzik Kuyruğu:** Sürükle-bırak desteğiyle YouTube linklerini kuyruğa ekleme ve sıralama. Arka planda `yt-dlp` ile anında indirme ve önbellekleme (prefetch).
+- 🔊 **Gelişmiş Ses Enjeksiyonu (Web Audio API):** Sesi sanal kabloya veya sisteme ihtiyaç duymadan, doğrudan tarayıcının ses devresine *48kHz* kalitesinde aktarır. 
+- 🎚️ **Bağımsız Ses Kontrolü:** Odaya giden *Müzik* ve *Mikrofon* ses düzeylerini ayrı ayrı ayarlayabilme.
+- 🤖 **Tam Otonom Katılım:** Meet linkini girdiğiniz an otonom olarak (Playwright & CSS Selector) toplantıya katılır, kamerasını kapatır ve gürültü gidermeyi (Noise Cancellation) müziği bozmaması için otomatik deaktive eder.
+- 🔄 **Oynatma Modları:** Oynat, Duraklat, Durdur, Geç (Skip) ve Döngü (Loop) seçenekleri.
+- 🔐 **Admin Yetkilendirmesi:** Panelin müzik dinleyicileri tarafından görüntülenip, sadece şifreli giriş yapan adminler tarafından kontrol edilmesi.
+- 🛡️ **Hata Toleransı:** Otomatik çökme (Aw, Snap!) kurtarması, çift URL engellemesi ve kopan WebSocket bağlantılarını anında onarma.
+
+---
 
 ## 🛠️ Kullanılan Teknolojiler
 
 ### **Backend (Arka Plan)**
-- **Python & FastAPI:** Hızlı ve asenkron API/Sunucu altyapısı.
-- **Playwright:** Google Meet etkileşimleri için tarayıcı otomasyonu.
-- **yt-dlp:** YouTube videolarını indirmek ve ses formatına dönüştürmek için.
-- **WebSockets:** Sunucu ve arayüz arasında anlık veri senkronizasyonu.
+- **Python & FastAPI:** Asenkron, hızlı ve hafif web sunucusu.
+- **Playwright (async):** Başsız (Headless) veya görünür konfigürasyonla Google Chrome otomasyonu.
+- **yt-dlp:** Hızlı veri çekimi ve ses dosyası dönüşümü.
+- **WebSockets:** İstemci ile sunucu arasında milisaniyelik gecikmeyle (zero-lag) haberleşme.
 
 ### **Frontend (Arayüz)**
-- **Tailwind CSS:** Modern ve duyarlı (responsive) tasarım.
-- **Vanilla JavaScript:** Framework bağımsız, hızlı ve hafif istemci mantığı.
-- **FontAwesome:** Şık ikonlar.
+- **Tailwind CSS:** Esnek ve anında stilize edilebilir yapı. UI/UX odaklı animasyonlar ve neon efektler.
+- **Vanilla JavaScript:** 0 bağımlılık, `app.js` üzerinden yönetilen DOM manipülasyonu.
+- **Google Material Symbols:** Estetik ve ölçeklenebilir ikon ailesi.
+
+---
 
 ## 📦 Kurulum ve Çalıştırma
 
-### **1. Gereksinimler**
-- **Python 3.9+**
-- **Google Chrome** veya **Microsoft Edge** tarayıcısı.
-- İnternet erişimi.
+### **1. Sistem Gereksinimleri**
+- **Python 3.9** veya daha güncel bir sürüm.
+- **Google Chrome** (veya Microsoft Edge) sisteminizde kurulu olmalıdır.
+- (İsteğe bağlı) Ses dönüşümleri için bilgisayarınızda `ffmpeg` bulunması tavsiye edilir.
 
 ### **2. Bağımlılıkları Yükleyin**
-Proje dizininde bir terminal açın ve gerekli kütüphaneleri yükleyin:
+Projeyi klonladıktan veya indirdikten sonra terminali proje dizininde açın:
 ```bash
 pip install -r requirements.txt
 ```
 
-### **3. Browser Sürücülerini Yükleyin**
-Playwright'ın tarayıcıları kontrol edebilmesi için:
+### **3. Playwright Tarayıcılarını Hazırlayın**
+Playwright'ın bağımsız olarak sekme yönetebilmesi için Chromium ortamını indirin:
 ```bash
 playwright install chromium
 ```
@@ -49,25 +66,51 @@ playwright install chromium
 ```bash
 python main.py
 ```
-
-### **5. Kullanım**
-- Tarayıcınızdan `http://localhost:8000` adresine gidin.
-- Bir kullanıcı adı belirleyerek giriş yapın.
-- Google Meet linkinizi "Katıl" bölümüne yapıştırın.
-- Bot toplantıya katıldıktan sonra YouTube linklerini ekleyerek müzik keyfini başlatın!
-
-## 📂 Dosya Yapısı
-
-- `main.py`: Uygulamanın giriş noktası; sunucu ve botu başlatır.
-- `server.py`: FastAPI sunucusu, API uç noktaları ve WebSocket yönetimi.
-- `bot.py`: Playwright bot mantığı ve Web Audio API enjeksiyonu.
-- `audio_manager.py`: Şarkı indirme ve dosya yönetimi işlemleri.
-- `static/`: Web arayüzü dosyaları (HTML, CSS, JS).
-- `requirements.txt`: Gerekli Python kütüphaneleri listesi.
-
-## ⚠️ Önemli Notlar
-- Botun Google Meet'e sorunsuz girebilmesi için Chrome profilinizin açık olması veya gerekli çerezlerin (`cookies`) ayarlanmış olması gerekebilir.
-- Yüksek kaliteli ses için bot, Meet ayarlarındaki gürültü giderme özelliğini otomatik olarak kapatmaya çalışır.
+> Sunucu `http://127.0.0.1:8000` veya bulunduğunuz ağın yerel IP'si üzerinden yayına başlar.
 
 ---
-*Geliştiren: [Vedat]*
+
+## 🎮 Kullanım Rehberi
+
+1. **Dashboard'a Erişim:** Tarayıcınızdan `http://localhost:8000` adresine gidin.
+2. **Kullanıcı Adı:** Sisteme bağlandığınızda sizi temsil edecek bir isim belirleyin.
+3. **Toplantıya Katılım (Admin):** 
+   - Sağ üstteki kilit ikonuna basıp admin şifresi (`xasimaymun123` - *kod içerisinden değiştirilebilir*) ile yetki alın.
+   - Google Meet linkinizi panoya yapıştırıp **Katıl** butonuna basın. Bot arka planda odaya girecektir.
+4. **Müzik Ekleme:** YouTube linkinizi yapıştırın. Bot anında şarkı bilgilerini çekip kuyruğa dahil edecektir.
+5. **Kontrol:** Parçaları sıraya dizebilir, sürükleyebilir, durdurabilir ve ince ses ayarlarını panelden canlı olarak yapabilirsiniz!
+
+---
+
+## 📂 Dosya ve Mimari Yapısı
+
+```bash
+📦 MeetBot3.0
+ ┣ 📂 chrome_profil/    # Otomasyon için kalıcı çerez ve oturum dosyaları
+ ┣ 📂 downloads/        # İndirilen ve geçici olarak çalınan müzik dosyaları
+ ┣ 📂 static/           # Frontend (HTML, CSS, JS) kaynakları
+ ┃ ┣ 📜 app.js
+ ┃ ┣ 📜 index.html
+ ┃ ┗ 📜 styles.css
+ ┣ 📜 audio_manager.py  # yt-dlp ile müzik indirme / kuyruk algoritması
+ ┣ 📜 bot.py            # Playwright işlemleri, Web Audio JS Injection, Seçiciler
+ ┣ 📜 main.py           # Sunucu ayağa kaldırma, Uvicorn tetikleyicisi
+ ┣ 📜 server.py         # FastAPI rotaları, WebSocket haberleşmesi, State yönetimi
+ ┣ 📜 create_silence.py # Sahte mikrofon beslemesi için boş ses üreteci
+ ┗ 📜 requirements.txt  # Python paket bağımlılıkları
+```
+
+---
+
+## ⚠️ Önemli Notlar ve Sorun Giderme
+
+- **Sandbox Hataları (Linux/Sunucu):** Eğer sunucuda çalıştırıyorsanız `bot.py` içindeki Chrome başlatma argümanlarında `--no-sandbox` bulunduğundan emin olun.
+- **Toplantıya Kabul:** Bot toplantıya kendi Google hesabı olmadan "Anonim" olarak katılır (Hesap girilmediyse). Meet sahibinin botu **kabul etmesi** gerekmektedir.
+- **Çift URL Hatası:** Kullanıcı kaynaklı çift URL kopyalama (`https://meet.google.com/xxxhttps://...`) gibi syntax hataları frontend ve backend filtreleriyle otomatik temizlenir.
+- **Ses Kalitesi:** Meet'in kendi arayüzünde "Gürültü Giderme" aktif olursa müzik seste bozulmalara yol açabilir. Bot bunu *kendi kendine* kapatacak şekilde dizayn edilmiştir.
+
+---
+
+<div align="center">
+  <p>🎨 <b>Vedat</b> tarafından sevgiyle geliştirildi.</p>
+</div>
