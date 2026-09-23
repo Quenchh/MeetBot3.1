@@ -1,0 +1,10 @@
+{
+    "name": "meetbot-web",
+    "version": "3.2.0",
+    "private": true,
+    "description": "MeetBot web arayüzü: Tailwind CSS derleme betikleri (derlenmiş static/tailwind.css repoda tutulur, çalıştırmak için Node gerekmez)",
+    "scripts": {
+        "build:css": "npx --yes tailwindcss@3.4.19 -c tailwind.config.js -i static/src/input.css -o static/tailwind.css --minify",
+        "watch:css": "npx --yes tailwindcss@3.4.19 -c tailwind.config.js -i static/src/input.css -o static/tailwind.css --watch"
+    }
+}

@@ -1,7 +1,18 @@
-fastapi
-uvicorn[standard]
-websockets
-playwright
-playwright-stealth
-aiofiles
-yt-dlp
+# ──────────────────────────────────────────────────────────────
+#  MeetBot 3.2 — çalışma zamanı bağımlılıkları (Python 3.10+)
+#  Kurulum:  python -m pip install -r requirements.txt
+#  Testler için ayrıca: requirements-dev.txt
+# ──────────────────────────────────────────────────────────────
+
+# Web sunucusu + WebSocket ([standard] eki websockets, httptools vb. getirir)
+fastapi>=0.141.1
+uvicorn[standard]>=0.53.0
+
+# Botun Chrome/Edge penceresini CDP üzerinden yönetir
+# (bilgisayardaki Chrome kullanılır; "playwright install" yalnızca testler için gerekir)
+playwright>=1.63.0
+playwright-stealth>=2.0.3
+
+# YouTube arama / bilgi / ses indirme. [default] eki, YouTube'un JS doğrulamasını
+# çözen yt-dlp-ejs paketini getirir (ayrıca Node.js 22+ gerekir, bkz. README).
+yt-dlp[default]>=2026.8.19

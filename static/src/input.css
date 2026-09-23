@@ -1,0 +1,201 @@
+/* ──────────────────────────────────────────────────────────────
+   MeetBot 3.2 — Tailwind giriş dosyası (Vaporwave tema)
+
+   Bu dosya derlenir:  npm run build:css  →  static/tailwind.css
+   Bileşen sınıfları @layer components içinde olduğundan aynı öğeye
+   eklenen yardımcı sınıflar (ör. "v-window border-sunset") onları ezer.
+   Derleme gerektirmeyen ek stiller static/style.css içindedir.
+   ────────────────────────────────────────────────────────────── */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Tema değişkenleri + temel stiller ── */
+@layer base {
+    :root {
+        --fuchsia-rgb: 255 0 255;
+        --teal-rgb: 0 242 255;
+        --sunset-rgb: 255 140 0;
+        --purple-rgb: 75 0 130;
+        --fuchsia: rgb(var(--fuchsia-rgb));
+        --teal: rgb(var(--teal-rgb));
+        --sunset: rgb(var(--sunset-rgb));
+        --purple: rgb(var(--purple-rgb));
+        --grid-color: rgb(var(--teal-rgb) / 0.2);
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: var(--purple);
+        background-image:
+            linear-gradient(var(--grid-color) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+        background-size: 50px 50px;
+        background-attachment: fixed;
+        font-family: "VT323", ui-monospace, monospace;
+        overflow-x: hidden;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+    }
+}
+
+/* ── Vaporwave bileşenleri ── */
+@layer components {
+    .scanlines {
+        position: fixed;
+        inset: 0;
+        background:
+            linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+            linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        background-size: 100% 3px, 3px 100%;
+        pointer-events: none;
+        z-index: 60;
+    }
+
+    .v-window {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        border: 2px solid var(--teal);
+        box-shadow: 8px 8px 0 var(--fuchsia);
+    }
+
+    .v-header {
+        background: linear-gradient(90deg, var(--teal), var(--fuchsia));
+        font-family: "Saira Condensed", "Arial Narrow", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .crt-monitor {
+        position: relative;
+        background: #111;
+        border: 20px solid #333;
+        border-radius: 40px;
+        box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.5), 0 0 20px var(--teal);
+        overflow: hidden;
+    }
+
+    .crt-monitor::after {
+        content: " ";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 100%),
+            linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.1) 50%),
+            linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 100%, 100% 2px, 3px 100%;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .glitch-text {
+        text-shadow: 2px 0 var(--fuchsia), -2px 0 var(--teal);
+    }
+
+    .vapor-input {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--sunset);
+        color: var(--sunset);
+    }
+
+    .vapor-input::placeholder {
+        color: rgb(var(--sunset-rgb) / 0.5);
+    }
+
+    .vapor-input:focus {
+        outline: none;
+        border-color: var(--fuchsia);
+        box-shadow: 0 0 0 1px var(--fuchsia);
+    }
+
+    .vapor-input:disabled,
+    .vapor-input:read-only {
+        opacity: 0.7;
+    }
+
+    .vapor-btn {
+        background: var(--fuchsia);
+        color: #fff;
+        box-shadow: 4px 4px 0 var(--teal);
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .vapor-btn:active:not(:disabled) {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 var(--teal);
+    }
+
+    .vapor-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #444;
+        box-shadow: 4px 4px 0 #222;
+    }
+
+    .deco-statue {
+        opacity: 0.3;
+        filter: grayscale(1) contrast(200%) brightness(1.5) sepia(1) hue-rotate(250deg);
+        position: fixed;
+        bottom: -50px;
+        right: 0;
+        z-index: -1;
+        width: 400px;
+        /* Görselin açık renkli dikdörtgen arka planını kenarlarda erit */
+        -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+        mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+    }
+
+    .modal-overlay {
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+    }
+
+    .custom-scrollbar {
+        scrollbar-color: var(--fuchsia) rgba(0, 0, 0, 0.5);
+        scrollbar-width: thin;
+    }
+
+    .material-symbols-outlined {
+        font-family: "Material Symbols Outlined";
+        font-weight: normal;
+        font-style: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        white-space: nowrap;
+        direction: ltr;
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+    }
+
+    .icon-fill {
+        font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+    }
+
+    /* Yuvarlak neon ikon butonu (oynatma kontrolleri, kuyruk eylemleri) */
+    .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* İkon yazı tipi yüklenemezse uzun ligatür metni komşu butonların üstüne taşmasın */
+        overflow: hidden;
+        color: #fff;
+        opacity: 0.85;
+        transition: color 0.15s, opacity 0.15s, transform 0.15s, background-color 0.15s;
+    }
+
+    .icon-btn:hover:not(:disabled) {
+        opacity: 1;
+        color: var(--fuchsia);
+    }
+
+    .icon-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+    }
+}

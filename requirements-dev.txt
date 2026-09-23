@@ -1,0 +1,12 @@
+# ──────────────────────────────────────────────────────────────
+#  MeetBot 3.2 — geliştirme / test bağımlılıkları
+#  Kurulum:  python -m pip install -r requirements-dev.txt
+#  Tarayıcı testleri için bir kez:  python -m playwright install chromium
+# ──────────────────────────────────────────────────────────────
+
+-r requirements.txt
+
+pytest>=9.1.1
+pytest-asyncio>=1.4.0
+# fastapi.testclient (WebSocket protokol testleri) httpx kullanır
+httpx>=0.28.1

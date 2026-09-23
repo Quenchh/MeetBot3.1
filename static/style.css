@@ -1,60 +1,463 @@
-/* ── MeetBot 2.0 Styles (Tailwind Supplement) ── */
+/* ──────────────────────────────────────────────────────────────
+   MeetBot 3.2 — Ek stiller (derlenmiş Tailwind'in yanında)
 
-/* 
-   We kept this file for:
-   1. Toast notifications (easier to keep vanilla for now)
-   2. Any specific overrides not easily handled by Tailwind utility classes
-*/
+   Tema değişkenleri ve vaporwave bileşenleri static/src/input.css
+   içindedir. Burada Tailwind sınıflarıyla ifade etmesi zor olanlar var:
+   bildirimler, bağlantı bandı, kaydırıcılar, kuyruk satırı yerleşimi.
+   ────────────────────────────────────────────────────────────── */
 
 :root {
     --success: #00d26a;
     --danger: #f7365d;
+    --warning: #ffb000;
     --bg-card: #0f0f0f;
     --border: #2a2a2a;
 }
 
-/* ── Toast ── */
+/* "hidden" özniteliği her zaman kazanır (display tanımlı öğelerde bile) */
+[hidden] {
+    display: none !important;
+}
+
+/* ── Bağlantı bandı ── */
+.conn-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: repeating-linear-gradient(-45deg, var(--sunset), var(--sunset) 14px, #ffa733 14px, #ffa733 28px);
+    color: #000;
+    font-size: 1.25rem;
+    line-height: 1.2;
+    box-shadow: 0 4px 0 var(--fuchsia);
+}
+
+/* Band görünürken içerik altında kalmasın */
+body.is-offline #app {
+    padding-top: 4.5rem;
+}
+
+/* Bağlantı yokken arayüz soluk görünür (kontroller zaten devre dışı) */
+body.is-offline main {
+    filter: saturate(0.6);
+    opacity: 0.85;
+}
+
+/* ── Bildirimler (toast) ── */
 .toast-container {
-    /* Position handled by Tailwind in HTML */
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.6rem;
     pointer-events: none;
 }
 
 .toast {
-    background: var(--bg-card);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-    animation: slideIn 0.3s ease;
-    pointer-events: auto;
-    /* Allow clicking toast if needed */
-    font-size: 0.9rem;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 0.5rem;
+    max-width: min(360px, calc(100vw - 2rem));
+    padding: 0.6rem 0.5rem 0.6rem 0.9rem;
+    background: var(--bg-card);
+    color: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+    font-family: "Saira Condensed", "Arial Narrow", sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    animation: toast-in 0.25s ease;
+    pointer-events: none;
 }
 
-.toast.success {
-    border-color: var(--success);
-    color: var(--success);
-    border-left-width: 4px;
+.toast-info { border-left-color: var(--teal); }
+.toast-success { border-left-color: var(--success); }
+.toast-warning { border-left-color: var(--warning); }
+.toast-error { border-left-color: var(--danger); color: #ffd0da; }
+
+.toast-text {
+    flex: 1;
+    min-width: 0;
 }
 
-.toast.error {
-    border-color: var(--danger);
-    color: var(--danger);
-    border-left-width: 4px;
+.toast-count {
+    align-self: center;
+    padding: 0 0.35rem;
+    background: var(--fuchsia);
+    color: #000;
+    font-weight: 700;
 }
 
-@keyframes slideIn {
+.toast-close {
+    pointer-events: auto;
+    display: inline-flex;
+    padding: 0.1rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.toast-close:hover {
+    color: #fff;
+}
+
+.toast-close .material-symbols-outlined {
+    font-size: 1.1rem;
+}
+
+@keyframes toast-in {
     from {
-        transform: translateX(100%);
+        transform: translateX(40px);
         opacity: 0;
     }
 
     to {
-        transform: translateX(0);
+        transform: none;
         opacity: 1;
     }
+}
+
+/* ── Kaydırıcılar (ses + şarkı konumu) ── */
+.vapor-range {
+    --range-color: var(--fuchsia);
+    --fill: 0%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 1.75rem;
+    background: transparent;
+    cursor: pointer;
+    touch-action: pan-y;
+}
+
+.vapor-range--teal { --range-color: var(--teal); }
+.vapor-range--sunset { --range-color: var(--sunset); }
+.vapor-range--seek { --range-color: var(--fuchsia); }
+
+.vapor-range:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.vapor-range::-webkit-slider-runnable-track {
+    height: 0.75rem;
+    background: linear-gradient(to right, var(--range-color) var(--fill), #000 var(--fill));
+    border: 2px solid rgb(var(--teal-rgb) / 0.4);
+}
+
+.vapor-range::-moz-range-track {
+    height: 0.75rem;
+    background: linear-gradient(to right, var(--range-color) var(--fill), #000 var(--fill));
+    border: 2px solid rgb(var(--teal-rgb) / 0.4);
+}
+
+.vapor-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1rem;
+    height: 1.4rem;
+    margin-top: -0.55rem;
+    background: #fff;
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 var(--range-color);
+}
+
+.vapor-range::-moz-range-thumb {
+    width: 1rem;
+    height: 1.4rem;
+    border-radius: 0;
+    background: #fff;
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 var(--range-color);
+}
+
+.vapor-range:disabled::-webkit-slider-thumb {
+    visibility: hidden;
+}
+
+.vapor-range:disabled::-moz-range-thumb {
+    visibility: hidden;
+}
+
+/* ── Oynatma kontrolleri ── */
+.play-btn {
+    border: 2px solid var(--fuchsia);
+    background: rgb(var(--fuchsia-rgb) / 0.15);
+    box-shadow: 3px 3px 0 var(--teal);
+}
+
+.play-btn:hover:not(:disabled) {
+    background: rgb(var(--fuchsia-rgb) / 0.3);
+    color: #fff;
+}
+
+.repeat-btn[data-mode="off"] {
+    color: var(--teal);
+    opacity: 0.5;
+}
+
+.repeat-btn[data-mode="one"],
+.repeat-btn[data-mode="all"] {
+    color: var(--fuchsia);
+    opacity: 1;
+    text-shadow: 0 0 8px var(--fuchsia);
+}
+
+/* Yetki / bağlantı yokken diğer kontrollerle aynı soluklukta */
+.repeat-btn:disabled {
+    opacity: 0.25;
+}
+
+.mic-btn {
+    border-color: var(--teal);
+    background: rgb(var(--teal-rgb) / 0.1);
+}
+
+.mic-btn:hover:not(:disabled) {
+    background: rgb(var(--teal-rgb) / 0.2);
+}
+
+.mic-btn[aria-pressed="true"] {
+    border-color: var(--fuchsia);
+    background: rgb(var(--fuchsia-rgb) / 0.12);
+    color: var(--fuchsia);
+}
+
+.mic-btn:disabled,
+.queue-tool:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.queue-tool:hover:not(:disabled) {
+    background: rgb(var(--fuchsia-rgb) / 0.2);
+    border-color: var(--fuchsia);
+    color: #fff;
+}
+
+/* ── Kuyruk satırı: mobilde eylemler ikinci satırda, geniş ekranda sağda ── */
+.queue-item {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+        "idx thumb body"
+        "acts acts acts";
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    box-shadow: 5px 5px 0 var(--fuchsia);
+    border: 2px solid rgb(var(--teal-rgb) / 0.6);
+    background: rgba(20, 10, 35, 0.75);
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+/* Eylem butonu olmayan satır (ör. yetkisiz misafir): ikinci satıra gerek yok */
+.queue-item--static {
+    grid-template-areas: "idx thumb body";
+}
+
+.queue-item:hover,
+.queue-item:focus-within {
+    border-color: var(--fuchsia);
+    background: rgba(60, 0, 70, 0.75);
+}
+
+.qi-handle { grid-area: handle; display: none; cursor: grab; color: rgb(var(--teal-rgb) / 0.6); }
+.qi-index { grid-area: idx; }
+.qi-thumb { grid-area: thumb; }
+.qi-body { grid-area: body; min-width: 0; }
+.qi-actions { grid-area: acts; display: flex; justify-content: flex-end; gap: 0.25rem; }
+
+.qi-actions .icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgb(var(--teal-rgb) / 0.35);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.qi-actions .icon-btn.qi-remove {
+    color: var(--sunset);
+}
+
+.qi-actions .icon-btn:hover:not(:disabled) {
+    border-color: var(--fuchsia);
+}
+
+@media (min-width: 640px) {
+    .queue-item {
+        grid-template-columns: auto auto auto minmax(0, 1fr) auto;
+        grid-template-areas: "handle idx thumb body acts";
+    }
+
+    .qi-actions .icon-btn {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+}
+
+/* Sürükleme tutamacı yalnızca fareli cihazlarda ve taşıma yetkisi varken */
+@media (min-width: 640px) and (hover: hover) and (pointer: fine) {
+    .queue-item[draggable="true"] .qi-handle {
+        display: inline-flex;
+    }
+}
+
+.queue-item.is-dragging {
+    opacity: 0.4;
+}
+
+.queue-item[data-drop="before"] {
+    box-shadow: 0 -4px 0 var(--sunset), 5px 5px 0 var(--fuchsia);
+}
+
+.queue-item[data-drop="after"] {
+    box-shadow: 0 4px 0 var(--sunset), 5px 5px 0 var(--fuchsia);
+}
+
+/* ── Kuyruk ekranı zemini (perspektif ızgara) ── */
+.crt-floor {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    pointer-events: none;
+    background-image:
+        linear-gradient(var(--teal) 2px, transparent 2px),
+        linear-gradient(90deg, var(--teal) 2px, transparent 2px);
+    background-size: 30px 30px;
+    transform: perspective(500px) rotateX(60deg) translateY(200px);
+}
+
+/* ── Mobil ayarlamalar ── */
+@media (max-width: 639px) {
+    .crt-monitor {
+        border-width: 10px;
+        border-radius: 24px;
+    }
+
+    .toast-container {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        align-items: stretch;
+    }
+
+    .toast {
+        max-width: none;
+    }
+
+    .conn-banner {
+        font-size: 1.1rem;
+    }
+}
+
+/* ── Hareket azaltma tercihi ── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+/* ── Bot ekranı (yönetici) ── */
+.view-screen {
+    position: relative;
+    background: #000;
+    border: 2px solid var(--teal);
+    cursor: crosshair;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.view-screen[data-interactive="false"] {
+    cursor: default;
+}
+
+.view-screen:focus-visible,
+.view-screen:focus {
+    outline: none;
+    border-color: var(--fuchsia);
+    box-shadow: 0 0 0 2px var(--fuchsia);
+}
+
+.view-tab,
+.view-key,
+.view-icon-btn {
+    border: 2px solid var(--teal);
+    color: var(--teal);
+    background: rgba(0, 0, 0, 0.35);
+    font-family: "Saira Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    line-height: 1;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.view-tab,
+.view-key {
+    padding: 0.45rem 0.8rem;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+}
+
+.view-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+}
+
+.view-tab:hover,
+.view-key:hover,
+.view-icon-btn:hover {
+    background: rgba(0, 242, 255, 0.15);
+}
+
+.view-tab[aria-pressed="true"] {
+    background: var(--fuchsia);
+    border-color: var(--fuchsia);
+    color: #000;
+}
+
+.view-tab:disabled,
+.view-key:disabled,
+.view-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.view-chip {
+    padding: 0.25rem 0.6rem;
+    border: 2px solid var(--sunset);
+    color: var(--sunset);
+    font-family: "Saira Condensed", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.view-chip[data-state="yes"] {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+.view-chip[data-state="no"] {
+    border-color: var(--fuchsia);
+    color: var(--fuchsia);
 }

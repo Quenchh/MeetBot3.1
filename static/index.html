@@ -3,354 +3,410 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>MeetBot 2.0 - Vaporwave Dreamscape</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MeetBot 3.2 — Google Meet toplantısına YouTube müziği çalan bot" />
+    <meta name="theme-color" content="#4b0082" />
+    <title>MeetBot 3.2 — Vaporwave Dreamscape</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@400;700;900&family=VT323&display=swap"
         rel="stylesheet" />
+    <!-- Yalnızca kullanılan ikonlar indirilir (icon_names alfabetik sırada olmalı; tests/test_frontend.py denetler) -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle,album,arrow_back,arrow_downward,arrow_upward,check_circle,close,delete,delete_sweep,desktop_windows,download,drag_indicator,error,group,history,lock,lock_open,mic,mic_off,music_note,pause,person,play_arrow,playlist_add,progress_activity,refresh,repeat,repeat_one,schedule,shuffle,skip_next,stop,videocam,wifi_off&display=block"
         rel="stylesheet" />
-    <link rel="stylesheet" href="/static/style.css"> <!-- For Toasts and custom overrides -->
-    <style type="text/tailwindcss">
-        :root {
-            --fuchsia: #ff00ff;
-            --teal: #00f2ff;
-            --sunset: #ff8c00;
-            --purple: #4b0082;
-            --grid-color: rgba(0, 242, 255, 0.2);
-        }
-        body {
-            background-color: var(--purple);
-            background-image: 
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 50px 50px;
-            background-attachment: fixed;
-            font-family: 'VT323', monospace;
-            overflow-x: hidden;
-        }
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 3px, 3px 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-        .v-window {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            border: 2px solid var(--teal);
-            box-shadow: 8px 8px 0px var(--fuchsia);
-        }
-        .v-header {
-            background: linear-gradient(90deg, var(--teal), var(--fuchsia));
-            font-family: 'Saira Condensed', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .crt-monitor {
-            position: relative;
-            background: #111;
-            border: 20px solid #333;
-            border-radius: 40px;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.5), 0 0 20px var(--teal);
-            overflow: hidden;
-        }
-        .crt-monitor::after {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: radial-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 100%), 
-                        linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-        }
-        .glitch-text {
-            text-shadow: 2px 0 var(--fuchsia), -2px 0 var(--teal);
-        }
-        .vapor-input {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--sunset);
-            color: var(--sunset);
-        }
-        .vapor-btn {
-            background: var(--fuchsia);
-            box-shadow: 4px 4px 0px var(--teal);
-            transition: all 0.1s;
-        }
-        .vapor-btn:active, .vapor-btn:disabled {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px var(--teal);
-        }
-        .vapor-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #444;
-            box-shadow: 4px 4px 0px #222;
-        }
-        .deco-statue {
-            opacity: 0.3;
-            filter: grayscale(1) contrast(200%) brightness(1.5) sepia(1) hue-rotate(250deg);
-            position: fixed;
-            bottom: -50px;
-            right: 0;
-            z-index: -1;
-            width: 400px;
-        }
-        .modal-overlay {
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-        }
-        /* Custom scrollbar for crt monitor */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.5);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: var(--fuchsia);
-            border-radius: 4px;
-        }
-        .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined' !important;
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/tailwind.css?v=3.2.0" />
+    <link rel="stylesheet" href="/static/style.css?v=3.2.0" />
+    <script src="/static/app.js?v=3.2.0" defer></script>
 </head>
 
-<body class="p-6 md:p-10 text-white min-h-screen">
-    <div class="scanlines"></div>
-    <img alt="statue" class="deco-statue select-none pointer-events-none"
+<body class="text-white min-h-screen">
+    <div class="scanlines" aria-hidden="true"></div>
+    <!-- Dekoratif görsel: yalnızca geniş ekranda görünür; lazy sayesinde telefonda hiç indirilmez -->
+    <img id="deco-statue" alt="" aria-hidden="true" referrerpolicy="no-referrer" loading="lazy" decoding="async"
+        fetchpriority="low" class="deco-statue hidden lg:block select-none pointer-events-none"
         src="https://lh3.googleusercontent.com/aida-public/AB6AXuDinD4lX-3S2SIgEokCK5q-F1T9PxOUZw4ISydZW_mL62LSsq4xF6zwZ6RvzRjH_66r_aceivtsIbnI2Jsz14mEW5vOJ62QPA9qLWXdGFUvTqmf83W-4tWEV-VVw2D-W6CDQoem4WNkFgHlUEgn0YRHs0Mbx2U29V1eUr4w8StjgWDbnyQIEPNHPhaML-RN1iDAh38t6pXL6Sy4B1OovJwh_BkDM_h-RgT-qljonATq9D68wW6c2MVtK0wV4NFp7UVyyJB3y_D7VZhj" />
 
-    <!-- ── Login Modal (Vaporwave) ── -->
-    <div id="login-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center">
-        <div class="v-window p-8 rounded-2xl w-96 text-center transform hover:scale-[1.02] transition-transform">
-            <h1 class="font-['Saira_Condensed'] text-4xl font-black italic glitch-text mb-2">MeetBot 2.0</h1>
-            <p class="text-teal mb-6 font-mono text-xl tracking-widest">ENTER THE GRID</p>
-            <input type="text" id="login-username"
-                class="vapor-input font-mono w-full px-4 py-3 mb-2 focus:outline-none focus:border-teal transition-all text-xl placeholder-sunset/50"
-                placeholder="Kullanıcı adınız..." autofocus>
-            <div id="login-error"
-                class="text-fuchsia text-lg mb-4 min-h-[20px] font-bold drop-shadow-[0_0_5px_var(--fuchsia)]"></div>
-            <button id="login-btn"
-                class="vapor-btn w-full py-3 font-['Saira_Condensed'] font-bold text-2xl tracking-widest uppercase">Giriş
+    <noscript>
+        <p class="p-6 text-2xl text-center">MeetBot arayüzü için JavaScript gerekli.</p>
+    </noscript>
+
+    <!-- ── Sunucu bağlantı bandı (yeniden bağlanırken görünür) ──
+         Geri sayım aria-hidden: ekran okuyucu her saniye yeniden okumasın, yalnızca durum değişince okusun -->
+    <div id="conn-banner" class="conn-banner" role="status" aria-live="polite" hidden>
+        <span class="material-symbols-outlined text-2xl" aria-hidden="true">wifi_off</span>
+        <span id="conn-banner-text" class="flex-1 min-w-0">
+            <span id="conn-banner-status"></span><span id="conn-banner-countdown" aria-hidden="true"></span>
+        </span>
+        <button id="conn-retry-btn" type="button"
+            class="shrink-0 border-2 border-black bg-black/20 px-3 py-0.5 font-display font-bold uppercase hover:bg-black/40">Şimdi
+            dene</button>
+    </div>
+
+    <!-- ── Giriş (kullanıcı adı) ── -->
+    <div id="login-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4" hidden>
+        <form id="login-form" class="v-window p-8 rounded-2xl w-full max-w-sm text-center" role="dialog"
+            aria-modal="true" aria-labelledby="login-title" novalidate>
+            <h1 id="login-title" class="font-display text-4xl font-black italic glitch-text mb-2">MeetBot 3.2</h1>
+            <p class="text-teal mb-6 text-xl tracking-widest">ENTER THE GRID</p>
+            <label for="login-username" class="sr-only">Kullanıcı adınız</label>
+            <input type="text" id="login-username" maxlength="32" autocomplete="nickname" enterkeyhint="go"
+                class="vapor-input font-mono w-full px-4 py-3 mb-2 text-xl" placeholder="Kullanıcı adınız..." />
+            <div id="login-error" class="text-fuchsia text-lg mb-4 min-h-[1.75rem] font-bold" role="alert"></div>
+            <button id="login-btn" type="submit"
+                class="vapor-btn w-full py-3 font-display font-bold text-2xl tracking-widest uppercase">Giriş
                 Yap</button>
-        </div>
+            <button id="login-cancel-btn" type="button"
+                class="mt-4 w-full py-2 border-2 border-sunset text-sunset hover:bg-sunset/20 font-display font-bold text-xl uppercase"
+                hidden>Vazgeç</button>
+        </form>
     </div>
 
-    <!-- ── Admin Modal (Vaporwave) ── -->
-    <div id="admin-modal-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center hidden">
-        <div class="v-window p-8 rounded-2xl w-96 transform -rotate-1">
-            <h3 class="font-['Saira_Condensed'] text-3xl font-black italic glitch-text mb-2">Yönetici Girişi</h3>
+    <!-- ── Yönetici girişi ── -->
+    <div id="admin-modal-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4"
+        hidden>
+        <form id="admin-form" class="v-window p-8 rounded-2xl w-full max-w-sm md:-rotate-1" role="dialog"
+            aria-modal="true" aria-labelledby="admin-title" novalidate>
+            <h2 id="admin-title" class="font-display text-3xl font-black italic glitch-text mb-2">Yönetici Girişi</h2>
             <p class="text-teal mb-6 text-xl tracking-widest">ROOT ACCESS REQUIRED</p>
-            <input type="password" id="admin-password"
-                class="vapor-input font-mono w-full px-4 py-3 mb-2 focus:outline-none focus:border-fuchsia transition-all text-xl"
-                placeholder="Şifre...">
-            <div id="admin-error"
-                class="text-fuchsia text-lg mb-4 min-h-[20px] font-bold drop-shadow-[0_0_5px_var(--fuchsia)]"></div>
+            <label for="admin-password" class="sr-only">Yönetici şifresi</label>
+            <input type="password" id="admin-password" autocomplete="current-password" enterkeyhint="go"
+                class="vapor-input font-mono w-full px-4 py-3 mb-2 text-xl" placeholder="Şifre..." />
+            <div id="admin-error" class="text-fuchsia text-lg mb-4 min-h-[1.75rem] font-bold" role="alert"></div>
             <div class="flex gap-4">
-                <button id="admin-login-btn"
-                    class="vapor-btn flex-1 py-2 font-['Saira_Condensed'] font-bold text-xl uppercase">Giriş</button>
-                <button id="admin-cancel-btn"
-                    class="flex-1 border-2 border-sunset text-sunset hover:bg-sunset/20 font-['Saira_Condensed'] font-bold text-xl uppercase transition-colors">İptal</button>
+                <button id="admin-login-btn" type="submit"
+                    class="vapor-btn flex-1 py-2 font-display font-bold text-xl uppercase">Giriş</button>
+                <button id="admin-cancel-btn" type="button"
+                    class="flex-1 py-2 border-2 border-sunset text-sunset hover:bg-sunset/20 font-display font-bold text-xl uppercase transition-colors">İptal</button>
             </div>
-        </div>
+        </form>
     </div>
 
-    <!-- ── Main App (Hidden by default until login) ── -->
-    <div id="app" class="h-full hidden flex-col relative z-10 w-full max-w-[1600px] mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 w-full mt-2">
-            <div
-                class="flex items-center gap-4 bg-black/40 p-4 border-l-4 border-fuchsia transform -rotate-1 shadow-lg">
-                <span class="material-symbols-outlined text-4xl text-fuchsia">music_note</span>
-                <h1 class="font-['Saira_Condensed'] text-5xl font-black italic glitch-text">MeetBot <span
-                        class="text-3xl text-teal opacity-80">2.0</span></h1>
-                <div
-                    class="flex items-center gap-2 bg-red-600 px-3 py-1 text-sm font-bold uppercase tracking-tighter shadow-[4px_4px_0_#000] ml-2">
-                    <span id="status-dot" class="w-2 h-2 rounded-full bg-black"></span>
+    <!-- ── Bot ekranı (yönetici): botun tarayıcısını panelden gör ve kullan (ör. Google girişi) ── -->
+    <div id="view-overlay" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-2 sm:p-4" hidden>
+        <section id="view-dialog" class="v-window w-full max-w-6xl max-h-full overflow-y-auto p-3 sm:p-5 flex flex-col gap-3"
+            role="dialog" aria-modal="true" aria-labelledby="view-title">
+            <div class="flex flex-wrap items-center gap-3">
+                <h2 id="view-title" class="font-display text-2xl sm:text-3xl font-black italic glitch-text mr-auto">Bot Ekranı</h2>
+                <span id="view-google" class="view-chip" data-state="unknown">Google: ?</span>
+                <button id="view-signout-btn" type="button" class="view-key" hidden
+                    title="Botun Google hesabından çıkış yap (başka bir hesapla girmek için)">Hesabı çıkar</button>
+                <button id="view-close-btn" type="button" class="view-icon-btn" aria-label="Bot ekranını kapat"
+                    title="Kapat">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex gap-2" role="group" aria-label="Gösterilen sekme">
+                    <button id="view-tab-meet" type="button" class="view-tab" data-target="meet" aria-pressed="true">Meet sekmesi</button>
+                    <button id="view-tab-login" type="button" class="view-tab" data-target="login" aria-pressed="false">Google girişi</button>
+                </div>
+                <button id="view-back-btn" type="button" class="view-icon-btn" aria-label="Geri git" title="Geri">
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                </button>
+                <button id="view-reload-btn" type="button" class="view-icon-btn" aria-label="Sayfayı yenile" title="Yenile">
+                    <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+                </button>
+                <p id="view-url" class="font-mono text-sm text-teal truncate min-w-0 flex-1 basis-full sm:basis-auto"></p>
+            </div>
+            <div id="view-screen" tabindex="0" class="view-screen"
+                aria-label="Botun tarayıcı ekranı: tıklamalar ve seçiliyken basılan tuşlar bota iletilir">
+                <img id="view-img" alt="Botun tarayıcı ekranı" class="block w-full h-auto" draggable="false" hidden />
+                <p id="view-placeholder" class="p-10 text-center text-sunset">Bot ekranı yükleniyor…</p>
+            </div>
+            <p id="view-status" class="text-sm text-fuchsia min-h-[1.25rem]" role="status"></p>
+            <form id="view-type-form" class="flex flex-wrap items-center gap-2" novalidate>
+                <label for="view-text" class="sr-only">Bota gönderilecek metin</label>
+                <input id="view-text" type="password" autocomplete="off" spellcheck="false"
+                    class="vapor-input font-mono px-3 py-2 min-w-0 flex-1 basis-full sm:basis-auto"
+                    placeholder="Metin yaz (gizli) → Gönder" />
+                <button id="view-send-btn" type="submit" class="vapor-btn px-4 py-2 font-display font-bold text-lg">Gönder</button>
+                <button type="button" class="view-key" data-key="Enter">Enter</button>
+                <button type="button" class="view-key" data-key="Tab">Tab</button>
+                <button type="button" class="view-key" data-key="Backspace" aria-label="Geri sil">⌫</button>
+                <button type="button" class="view-key" data-key="Escape">Esc</button>
+            </form>
+            <p id="view-readonly" class="text-sm text-teal">👁️ Meet sekmesi yalnızca izlenebilir; tıklama ve klavye yalnızca Google girişi sekmesinde çalışır.</p>
+            <p class="text-sm opacity-80 leading-snug">
+                Botun Google hesabına girmek için <strong>Google girişi</strong> sekmesini aç, ekrana tıkla ve
+                e-postanı / şifreni yaz (ekran seçiliyken klavyen doğrudan bota gider). Güvenlik için oturum
+                açıldığı an giriş sekmesi kendiliğinden kapanır ve hesap ayarlarına panelden erişilemez.
+            </p>
+        </section>
+    </div>
+
+    <!-- ── Ana uygulama ── -->
+    <div id="app" class="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-6 md:px-10 md:py-10" hidden>
+        <header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-5 mb-8">
+            <div class="order-1 flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 bg-black/40 p-2 sm:p-3 md:p-4 border-l-4 border-fuchsia md:-rotate-1 shadow-lg">
+                <span class="material-symbols-outlined text-3xl sm:text-4xl text-fuchsia" aria-hidden="true">music_note</span>
+                <h1 class="font-display text-4xl sm:text-5xl font-black italic glitch-text">MeetBot <span
+                        class="text-2xl sm:text-3xl text-teal opacity-80">3.2</span></h1>
+                <div id="bot-badge" role="status"
+                    class="flex items-center gap-2 bg-red-600 text-white px-3 py-1 text-sm font-bold uppercase tracking-tighter shadow-[4px_4px_0_#000]"
+                    title="Botun Meet durumu">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-black" aria-hidden="true"></span>
+                    <span class="sr-only">Bot durumu:</span>
                     <span id="status-text">Bağlı Değil</span>
                 </div>
             </div>
 
-            <div class="v-window p-2 flex gap-4 items-center transform rotate-1 w-full md:w-auto">
-                <input id="meet-link-input" class="vapor-input font-mono text-sm px-4 py-2 w-full md:w-80" type="text"
-                    placeholder="https://meet.google.com/..." />
-                <button id="meet-join-btn"
-                    class="vapor-btn px-6 py-2 font-['Saira_Condensed'] font-bold text-lg">Katıl</button>
-                <button id="meet-leave-btn"
-                    class="hidden bg-red-600 hover:bg-red-500 text-white px-6 py-2 font-['Saira_Condensed'] font-bold text-lg border-2 border-black shadow-[4px_4px_0_#000]">Ayrıl</button>
-            </div>
-
-            <div class="flex gap-4 font-['Saira_Condensed'] text-xl">
-                <button id="admin-toggle-btn"
-                    class="flex items-center gap-2 border-b-2 border-teal pb-1 hover:text-fuchsia transition-colors outline-none">
-                    <span class="material-symbols-outlined">person</span>
-                    <span>Admin</span>
-                </button>
-                <div class="flex items-center gap-2 border-b-2 border-fuchsia pb-1 text-white opacity-80">
-                    <span class="material-symbols-outlined text-fuchsia">account_circle</span>
-                    <span id="user-badge-name" class="tracking-wide">--</span>
+            <form id="meet-form"
+                class="order-3 lg:order-2 w-full lg:w-auto lg:flex-1 lg:max-w-2xl v-window p-2 md:rotate-1" novalidate>
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+                    <span class="material-symbols-outlined text-teal text-2xl pl-1 hidden sm:inline"
+                        aria-hidden="true">videocam</span>
+                    <label for="meet-link-input" class="sr-only">Google Meet linki</label>
+                    <input id="meet-link-input" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+                        enterkeyhint="go" class="vapor-input font-mono text-sm px-3 py-2 min-w-0 flex-1 basis-full sm:basis-auto"
+                        placeholder="https://meet.google.com/abc-defg-hij" />
+                    <button id="meet-join-btn" type="submit"
+                        class="vapor-btn flex-1 sm:flex-none px-4 sm:px-6 py-2 font-display font-bold text-lg">Katıl</button>
+                    <button id="meet-cancel-btn" type="button"
+                        class="flex-1 sm:flex-none border-2 border-sunset text-sunset hover:bg-sunset/20 px-4 py-1.5 font-display font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        hidden>İptal</button>
+                    <button id="meet-leave-btn" type="button"
+                        class="flex-1 sm:flex-none bg-red-600 hover:bg-red-500 text-white px-4 sm:px-6 py-1.5 font-display font-bold text-lg border-2 border-black shadow-[4px_4px_0_#000] disabled:opacity-50 disabled:cursor-not-allowed"
+                        hidden>Ayrıl</button>
                 </div>
+                <p id="bot-detail" class="px-1 pt-2 text-base text-sunset leading-tight break-words" hidden></p>
+            </form>
+
+            <div class="order-2 lg:order-3 flex flex-wrap items-center gap-x-4 gap-y-2 font-display text-xl min-w-0">
+                <button id="view-btn" type="button"
+                    class="flex items-center gap-2 border-b-2 border-sunset pb-1 hover:text-sunset transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-haspopup="dialog" hidden>
+                    <span class="material-symbols-outlined" aria-hidden="true">desktop_windows</span>
+                    <span class="hidden sm:inline">Bot ekranı</span>
+                    <span class="sr-only sm:hidden">Bot ekranı</span>
+                </button>
+                <button id="admin-toggle-btn" type="button"
+                    class="flex items-center gap-2 border-b-2 border-teal pb-1 hover:text-fuchsia transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-haspopup="dialog">
+                    <span id="admin-toggle-icon" class="material-symbols-outlined" aria-hidden="true">lock</span>
+                    <span id="admin-toggle-text">Admin</span>
+                </button>
+                <button id="user-badge" type="button"
+                    class="flex items-center gap-2 border-b-2 border-fuchsia pb-1 opacity-90 hover:text-teal transition-colors min-w-0"
+                    title="Kullanıcı adını değiştir">
+                    <span class="material-symbols-outlined text-fuchsia" aria-hidden="true">account_circle</span>
+                    <span id="user-badge-name" class="tracking-wide truncate max-w-[10rem]">--</span>
+                </button>
             </div>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-            <div class="lg:col-span-3 space-y-6">
-                <section class="v-window overflow-hidden transform hover:scale-[1.02] transition-transform">
-                    <div class="v-header px-4 py-1 text-black font-bold text-sm">ŞARKI EKLE</div>
-                    <div class="p-5 space-y-4">
-                        <input id="yt-link-input"
-                            class="vapor-input w-full p-3 font-mono text-lg outline-none placeholder:text-sunset/50 focus:border-fuchsia focus:ring-1 focus:ring-fuchsia"
-                            placeholder="YouTube linki yapıştır..." type="text" />
-                        <button id="add-song-btn"
-                            class="vapor-btn w-full py-3 font-['Saira_Condensed'] font-bold text-2xl uppercase tracking-widest">Ekle</button>
-                    </div>
+        <main id="main" class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <!-- Sol sütun: şarkı ekle + şu an çalan -->
+            <div class="lg:col-span-3 space-y-6 min-w-0">
+                <section class="v-window overflow-hidden" aria-labelledby="add-heading">
+                    <h2 id="add-heading" class="v-header px-4 py-1 text-black font-bold text-sm">ŞARKI EKLE</h2>
+                    <form id="add-form" class="p-4 flex flex-wrap lg:flex-col gap-3" novalidate>
+                        <label for="yt-link-input" class="sr-only">YouTube linki, oynatma listesi veya şarkı
+                            adı</label>
+                        <input id="yt-link-input" type="text" maxlength="500" autocomplete="off" enterkeyhint="send"
+                            class="vapor-input min-w-0 flex-1 lg:flex-none lg:w-full p-3 font-mono text-lg"
+                            placeholder="YouTube linki, oynatma listesi veya şarkı adı…" />
+                        <button id="add-song-btn" type="submit"
+                            class="vapor-btn shrink-0 px-5 lg:w-full py-2 lg:py-3 font-display font-bold text-2xl uppercase tracking-widest flex items-center justify-center gap-2">
+                            <span id="add-song-spinner" class="material-symbols-outlined animate-spin"
+                                aria-hidden="true" hidden>progress_activity</span>
+                            <span id="add-song-label">Ekle</span>
+                        </button>
+                        <p id="add-hint" class="w-full text-teal/80 text-base leading-tight" hidden></p>
+                    </form>
                 </section>
 
-                <section class="v-window overflow-hidden transform -rotate-1">
-                    <div
+                <section class="v-window overflow-hidden md:-rotate-1" aria-labelledby="np-heading">
+                    <h2 id="np-heading"
                         class="v-header px-4 py-1 text-black font-bold text-sm bg-gradient-to-r from-sunset to-fuchsia">
-                        ŞU AN ÇALAN</div>
-                    <div class="p-6 text-center">
-                        <p id="np-title"
-                            class="text-2xl font-['Saira_Condensed'] font-bold min-h-[64px] text-teal animate-pulse line-clamp-2 mb-2 break-words">
-                            Şarkı çalmıyor</p>
-                        <div class="flex justify-between items-center text-sunset mt-4 border-t border-sunset/30 pt-3">
-                            <div id="np-status"
-                                class="text-sm uppercase tracking-widest font-bold opacity-0 flex items-center gap-1">
-                                ...</div>
-                            <div id="np-time" class="font-mono text-md">--:-- / --:--</div>
+                        ŞU AN ÇALAN</h2>
+                    <div class="p-4">
+                        <div class="flex lg:flex-col items-center lg:items-stretch gap-4 lg:gap-3">
+                            <div
+                                class="relative shrink-0 w-28 sm:w-40 lg:w-4/5 lg:mx-auto aspect-video border-2 border-teal bg-black/60 overflow-hidden">
+                                <img id="np-thumb" class="absolute inset-0 w-full h-full object-cover" alt=""
+                                    referrerpolicy="no-referrer" hidden />
+                                <span id="np-art-icon"
+                                    class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-5xl text-teal/60"
+                                    aria-hidden="true">album</span>
+                            </div>
+                            <div class="min-w-0 flex-1 lg:text-center">
+                                <p id="np-title"
+                                    class="font-display font-bold text-xl sm:text-2xl text-teal line-clamp-2 break-words">
+                                    Şarkı çalmıyor</p>
+                                <p id="np-requester" class="text-sunset text-lg truncate" hidden></p>
+                            </div>
                         </div>
+
+                        <div class="mt-4">
+                            <label for="np-seek" class="sr-only">Şarkı konumu</label>
+                            <input id="np-seek" type="range" min="0" max="0" step="1" value="0"
+                                class="vapor-range vapor-range--seek w-full" disabled />
+                            <div class="flex justify-between items-center gap-2 text-sunset mt-1">
+                                <div id="np-status"
+                                    class="text-sm uppercase tracking-widest font-bold flex items-center gap-1"
+                                    hidden></div>
+                                <div id="np-time" class="font-mono text-base ml-auto" aria-live="off">--:-- / --:--
+                                </div>
+                            </div>
+                            <p id="np-hint" class="mt-2 text-base leading-tight text-teal" hidden></p>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-3 sm:gap-5 mt-4" role="group"
+                            aria-label="Oynatma kontrolleri">
+                            <button id="btn-repeat" type="button" class="icon-btn repeat-btn w-12 h-12"
+                                data-mode="off" aria-label="Tekrar modu: Kapalı">
+                                <span id="btn-repeat-icon" class="material-symbols-outlined text-3xl"
+                                    aria-hidden="true">repeat</span>
+                            </button>
+                            <button id="btn-stop" type="button" class="icon-btn w-12 h-12" aria-label="Durdur"
+                                disabled>
+                                <span class="material-symbols-outlined text-4xl" aria-hidden="true">stop</span>
+                            </button>
+                            <button id="btn-playpause" type="button" class="icon-btn play-btn w-16 h-16 rounded-full"
+                                aria-label="Oynat" disabled>
+                                <span id="btn-playpause-icon" class="material-symbols-outlined icon-fill text-5xl"
+                                    aria-hidden="true">play_arrow</span>
+                            </button>
+                            <button id="btn-skip" type="button" class="icon-btn w-12 h-12" aria-label="Sonraki şarkı"
+                                disabled>
+                                <span class="material-symbols-outlined text-4xl" aria-hidden="true">skip_next</span>
+                            </button>
+                        </div>
+                        <p id="repeat-label" class="text-center text-sm uppercase tracking-widest text-teal/80 mt-1">
+                            Tekrar: Kapalı</p>
                     </div>
                 </section>
             </div>
 
-            <div class="lg:col-span-6 relative flex flex-col h-full min-h-[500px]">
-                <div class="v-window mb-4 transform -rotate-1 self-start px-8 py-2 border-sunset relative z-20">
-                    <h2
-                        class="font-['Saira_Condensed'] text-3xl font-black italic flex items-center gap-4 drop-shadow-[2px_2px_0_var(--purple)]">
-                        Sıradaki Şarkılar
-                        <span id="queue-count"
-                            class="bg-sunset text-black px-3 py-1 text-xl not-italic rounded-full shadow-[2px_2px_0_var(--fuchsia)] font-mono">0</span>
-                    </h2>
+            <!-- Orta sütun: kuyruk -->
+            <section class="lg:col-span-6 min-w-0 relative flex flex-col" aria-labelledby="queue-heading">
+                <div class="flex flex-wrap items-end justify-between gap-3 mb-4 relative z-20">
+                    <div class="v-window md:-rotate-1 px-5 sm:px-8 py-2 border-sunset min-w-0">
+                        <!-- tabindex=-1: odaklanan şarkı listeden çıkıp liste boşalınca odak buraya taşınır (app.js restoreFocus) -->
+                        <h2 id="queue-heading" tabindex="-1"
+                            class="font-display text-2xl sm:text-3xl font-black italic flex items-center gap-3 drop-shadow-[2px_2px_0_var(--purple)]">
+                            Sıradaki Şarkılar
+                            <span id="queue-count"
+                                class="bg-sunset text-black px-3 py-0.5 text-xl not-italic rounded-full shadow-[2px_2px_0_var(--fuchsia)] font-mono">0</span>
+                        </h2>
+                        <p id="queue-eta" class="text-teal text-lg leading-tight">Kuyruk boş</p>
+                    </div>
+                    <div class="flex sm:flex-col gap-2">
+                        <button id="btn-shuffle" type="button"
+                            class="queue-tool flex items-center gap-1 px-3 py-1.5 border-2 border-teal text-teal bg-black/40 font-display font-bold uppercase tracking-wide"
+                            disabled>
+                            <span class="material-symbols-outlined" aria-hidden="true">shuffle</span>Karıştır
+                        </button>
+                        <button id="btn-clear" type="button"
+                            class="queue-tool flex items-center gap-1 px-3 py-1.5 border-2 border-sunset text-sunset bg-black/40 font-display font-bold uppercase tracking-wide"
+                            hidden disabled>
+                            <span class="material-symbols-outlined" aria-hidden="true">delete_sweep</span>Temizle
+                        </button>
+                    </div>
                 </div>
 
-                <div class="crt-monitor flex-1 flex flex-col relative overflow-hidden h-full z-10">
-                    <div class="relative z-10 p-6 flex-1 flex flex-col overflow-hidden h-full">
-
-                        <div id="queue-list"
-                            class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar pr-4 z-20 absolute inset-0 p-6">
-                            <!-- Javascript will inject queue items here -->
-                            <div
-                                class="flex-1 flex flex-col items-center justify-center text-center opacity-80 h-full mt-20">
-                                <div class="relative mb-8">
-                                    <span
-                                        class="material-symbols-outlined text-[100px] text-teal opacity-50 absolute -top-4 -left-4 font-black">music_note</span>
-                                    <span
-                                        class="material-symbols-outlined text-[100px] text-fuchsia opacity-50 absolute top-4 left-4 font-black">music_note</span>
-                                    <span class="material-symbols-outlined text-[100px] text-white">music_note</span>
-                                </div>
-                                <p
-                                    class="text-3xl font-['Saira_Condensed'] font-bold tracking-tighter text-sunset glitch-text uppercase">
-                                    Kuyruk boş — YouTube linki ekleyin
-                                </p>
-                            </div>
+                <div class="crt-monitor relative z-10 flex flex-col min-h-[18rem] lg:h-[calc(100vh-15rem)] lg:min-h-[30rem]">
+                    <ol id="queue-list" aria-labelledby="queue-heading"
+                        class="relative z-10 flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-5 space-y-3 max-h-[70vh] lg:max-h-none"
+                        hidden></ol>
+                    <div id="queue-empty"
+                        class="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-6 opacity-80">
+                        <div class="relative mb-8" aria-hidden="true">
+                            <span
+                                class="material-symbols-outlined text-[100px] text-teal opacity-50 absolute -top-4 -left-4">music_note</span>
+                            <span
+                                class="material-symbols-outlined text-[100px] text-fuchsia opacity-50 absolute top-4 left-4">music_note</span>
+                            <span class="material-symbols-outlined text-[100px] text-white">music_note</span>
                         </div>
-
+                        <p class="text-2xl sm:text-3xl font-display font-bold tracking-wide text-sunset glitch-text uppercase">
+                            Kuyruk boş — şarkı adı ya da YouTube linki ekleyin
+                        </p>
                     </div>
-                    <div class="absolute inset-0 opacity-10 pointer-events-none"
-                        style="background-image: linear-gradient(var(--teal) 2px, transparent 2px), linear-gradient(90deg, var(--teal) 2px, transparent 2px); background-size: 30px 30px; transform: perspective(500px) rotateX(60deg) translateY(200px);">
-                    </div>
+                    <div class="crt-floor" aria-hidden="true"></div>
                 </div>
 
-                <div
-                    class="hidden xl:block absolute -bottom-10 -right-10 v-window p-4 w-48 h-48 transform flex items-center rotate-12 opacity-80 border-sunset z-0">
-                    <div
-                        class="text-[9px] text-sunset uppercase tracking-tighter h-full font-mono break-words leading-tight">
+                <div class="hidden xl:flex absolute -bottom-10 -right-10 v-window p-4 w-48 h-48 items-center rotate-12 opacity-80 border-sunset z-0"
+                    aria-hidden="true">
+                    <div class="text-[9px] text-sunset uppercase tracking-tighter h-full font-mono break-words leading-tight">
                         SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
                         SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
                         SYSTEM ERROR // SYSTEM ERROR // SYSTEM ERROR //
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="lg:col-span-3 space-y-6">
-                <section class="v-window overflow-hidden border-sunset">
-                    <div class="v-header px-4 py-1 text-black font-bold text-sm bg-sunset">OYNATMA KONTROLLERİ</div>
-                    <div class="p-6">
-                        <div class="flex justify-center gap-4 mb-8">
-                            <button id="btn-resume"
-                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">play_arrow</button>
-                            <button id="btn-pause"
-                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white hidden">pause</button>
-                            <button id="btn-stop"
-                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-unset hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">stop</button>
-                            <button id="btn-skip"
-                                class="material-symbols-outlined text-4xl text-white opacity-80 hover:opacity-100 hover:text-fuchsia transition-all hover:scale-110 disabled:opacity-20 disabled:hover:scale-100 disabled:hover:text-white">skip_next</button>
-                            <button id="btn-loop"
-                                class="material-symbols-outlined text-4xl text-teal opacity-50 hover:opacity-100 hover:text-teal transition-all hover:scale-110">repeat</button>
-                        </div>
-                        <button id="btn-toggle-mic"
-                            class="w-full border-2 border-teal p-3 flex items-center justify-center gap-2 bg-teal/10 hover:bg-teal/20 transition-colors">
-                            <span class="material-symbols-outlined">mic</span>
-                            <span class="font-['Saira_Condensed'] font-bold text-lg uppercase">Mikrofon AÇIK</span>
+            <!-- Sağ sütun: ses, dinleyenler, geçmiş -->
+            <div class="lg:col-span-3 space-y-6 min-w-0">
+                <section class="v-window overflow-hidden border-fuchsia md:rotate-1" aria-labelledby="sound-heading">
+                    <h2 id="sound-heading"
+                        class="v-header px-4 py-1 text-black font-bold text-sm bg-gradient-to-r from-fuchsia to-sunset">
+                        SES KONTROLLERİ</h2>
+                    <div class="p-5 space-y-6">
+                        <button id="btn-toggle-mic" type="button" class="mic-btn w-full border-2 p-3 flex items-center justify-center gap-2 transition-colors"
+                            aria-pressed="false" aria-label="Bot mikrofonunu sessize al" disabled>
+                            <span id="mic-icon" class="material-symbols-outlined" aria-hidden="true">mic</span>
+                            <span id="mic-text" class="font-display font-bold text-lg uppercase">Mikrofon AÇIK</span>
                         </button>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-baseline font-display font-bold tracking-widest text-teal">
+                                <label for="music-volume-slider" class="text-sm">MÜZİK SESİ</label>
+                                <output id="music-volume-value" for="music-volume-slider"
+                                    class="font-mono text-base">80%</output>
+                            </div>
+                            <input id="music-volume-slider" type="range" min="0" max="100" step="1" value="80"
+                                class="vapor-range vapor-range--teal w-full" disabled />
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-baseline font-display font-bold tracking-widest text-sunset">
+                                <label for="mic-volume-slider" class="text-sm">MİKROFON ÇIKIŞ SESİ</label>
+                                <output id="mic-volume-value" for="mic-volume-slider"
+                                    class="font-mono text-base">80%</output>
+                            </div>
+                            <input id="mic-volume-slider" type="range" min="0" max="100" step="1" value="80"
+                                class="vapor-range vapor-range--sunset w-full" disabled />
+                        </div>
                     </div>
                 </section>
 
-                <section class="v-window overflow-hidden border-fuchsia transform rotate-1">
-                    <div class="v-header px-4 py-1 text-black font-bold text-sm bg-fuchsia">SES KONTROLLERİ</div>
-                    <div class="p-6 space-y-8">
-                        <div class="space-y-3">
-                            <div
-                                class="flex justify-between text-lg font-['Saira_Condensed'] font-bold tracking-widest text-teal">
-                                <span class="text-xs mt-1">MÜZİK SESİ</span>
-                                <span id="music-volume-value" class="font-mono text-base">80%</span>
-                            </div>
-                            <input id="music-volume-slider"
-                                class="w-full h-3 accent-fuchsia bg-black appearance-none rounded-none border-2 border-teal/40 cursor-pointer outline-none"
-                                type="range" max="100" min="0" value="80" />
-                        </div>
-                        <div class="space-y-3">
-                            <div
-                                class="flex justify-between text-lg font-['Saira_Condensed'] font-bold tracking-widest text-sunset">
-                                <span class="text-xs mt-1">MİKROFON ÇIKIŞ SESİ</span>
-                                <span id="mic-volume-value" class="font-mono text-base">80%</span>
-                            </div>
-                            <input id="mic-volume-slider"
-                                class="w-full h-3 accent-sunset bg-black appearance-none rounded-none border-2 border-fuchsia/40 cursor-pointer outline-none"
-                                type="range" max="100" min="0" value="80" />
-                        </div>
-                    </div>
+                <section class="v-window overflow-hidden" aria-labelledby="listeners-heading">
+                    <h2 id="listeners-heading"
+                        class="v-header px-4 py-1 text-black font-bold text-sm flex items-center justify-between">
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-base"
+                                aria-hidden="true">group</span>DİNLEYENLER</span>
+                        <span id="listeners-count" class="font-mono">0</span>
+                    </h2>
+                    <ul id="listeners-list" class="p-4 flex flex-wrap gap-2" aria-label="Paneli açık olan kişiler">
+                    </ul>
+                </section>
+
+                <section class="v-window overflow-hidden border-sunset md:-rotate-1" aria-labelledby="history-heading">
+                    <h2 id="history-heading" tabindex="-1"
+                        class="v-header px-4 py-1 text-black font-bold text-sm bg-none bg-sunset flex items-center gap-1">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">history</span>SON
+                        ÇALINANLAR</h2>
+                    <ol id="history-list" class="p-3 space-y-2 max-h-80 overflow-y-auto custom-scrollbar" hidden></ol>
+                    <p id="history-empty" class="p-4 text-center text-lg opacity-70">Henüz çalınan şarkı yok</p>
                 </section>
             </div>
         </main>
 
         <footer
-            class="mt-20 border-t-2 border-dashed border-teal/30 pt-4 pb-8 flex justify-between items-center text-xs opacity-50 uppercase tracking-[0.5em] font-['Saira_Condensed'] w-full">
-            <span>Dreamscape OS v.2.0.84</span>
-            <div class="flex gap-4">
-                <span class="w-3 h-3 bg-fuchsia rounded-none"></span>
-                <span class="w-3 h-3 bg-teal rounded-none"></span>
-                <span class="w-3 h-3 bg-sunset rounded-none"></span>
+            class="mt-16 border-t-2 border-dashed border-teal/30 pt-4 pb-8 flex flex-wrap justify-between items-center gap-4 text-xs opacity-60 uppercase tracking-[0.5em] font-display">
+            <span>Dreamscape OS <span id="app-version">v3.2</span></span>
+            <div class="flex gap-4" aria-hidden="true">
+                <span class="w-3 h-3 bg-fuchsia"></span>
+                <span class="w-3 h-3 bg-teal"></span>
+                <span class="w-3 h-3 bg-sunset"></span>
             </div>
             <span>Est. 198X</span>
         </footer>
     </div>
 
-    <!-- Toast Container -->
-    <div class="fixed bottom-10 right-10 flex flex-col gap-3 z-50 pointer-events-none" id="toast-container"></div>
-
-    <script src="/static/app.js?v=6.0"></script>
+    <!-- Bildirimler -->
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
 </body>
 
 </html>

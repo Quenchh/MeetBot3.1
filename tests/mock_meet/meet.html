@@ -1,0 +1,424 @@
+<!doctype html>
+<!--
+  Sahte Google Meet sayfası (yalnızca testler için).
+
+  tests/test_bot_flow.py bu dosyayı Playwright route ile
+  https://meet.google.com/<kod> adresinde sunar ve __SCENARIO__ yer
+  tutucusunu JSON senaryoyla değiştirir. Taklit edilenler:
+    • anonim katılma ekranı: ad kutusu dolmadan "Ask to join" pasif,
+      data-is-muted'lı mikrofon/kamera düğmeleri, "More options"
+    • toplantı sahibini bekleme ekranı (düğmeler hâlâ görünür!)
+    • toplantı içi: "Leave call", mikrofon/kamera, Ayarlar → Ses →
+      Gürültü giderme (önünde başka bir anahtar), "Got it" açılır penceresi
+    • ret / yanıt yok / geçersiz kod / çıkarılma / ayrılma ekranları
+    • mikrofon izni "sorulacak" durumdaysa Meet'in katılma ekranını kapatan izin penceresi
+    • Türkçe arayüz ve data-is-muted olmayan (yalnız etiketli) düğmeler
+    • erişilebilir adına simge metni karışan menü/sekmeler, katılımcı "Mute" düğmesi
+    • Meet'in katılma düğmesi varyantları ("Join the call now", aria-label "… without camera"),
+      aynı hesap toplantıdaysa "Switch here" + kapalı "Other ways to join" → "Join here too"
+    • Ayarlar → Genel → "Leave empty calls", "Are you still there?" sorusu (toplantıda / beklerken)
+    • toplantı sahibinin botu bekleme odasına geri göndermesi (sendToWaitingRoom → admit)
+  Testler window.mock üzerinden durumu okur ve admit()/remove() çağırır;
+  önemli olaylar window.__mockEvent (expose_function) ile Python'a gider.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mock Meet</title>
+<style>
+  body { font-family: sans-serif; margin: 16px; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
+  video { width: 160px; height: 90px; background: #000; }
+  [role="dialog"] { border: 1px solid #333; padding: 8px; margin: 8px 0; }
+  [role="switch"] { width: 32px; height: 16px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app"><p>Getting ready…</p></div>
+<script>
+"use strict";
+const SCENARIO = Object.assign({
+    lang: "en",
+    anonymous: true,          // ad kutusu var; doldurulmadan katılma düğmesi pasif
+    admission: "auto",        // auto | manual | deny | noresponse | direct
+    admitAfterMs: 300,
+    prejoinDelayMs: 0,        // katılma ekranı geç çizilsin (is_visible hatasını yakalar)
+    invalidCode: false,
+    toggleAttrs: true,        // false → data-is-muted yok, durum yalnızca aria-label'da
+    toggleDelayMs: 0,         // düğme durumu gecikmeli değişsin
+    startMicMuted: false,     // Meet botu toplantıya sessizde alsın
+    noiseCancellation: true,
+    popup: true,
+    iconNames: false,         // menü/sekme simgeleri aria-hidden değil → ad "settingsSettings"
+    participantMute: false,   // araç çubuğundan önce "Mute Alice's microphone" düğmesi
+    joinLabel: null,          // katılma düğmesinin görünen metni (Meet'in ~30 varyantından biri)
+    joinAriaLabel: null,      // cihaz sorununda Meet aria-label'ı "… without microphone" yapar
+    switchHere: false,        // aynı hesap toplantıda: birincil düğme "Switch here" (ASLA tıklanmamalı)
+    otherWays: true,          // "Other ways to join" açılır bölümü (içinde Companion / telefon / "Join here too")
+    leaveEmptyCalls: true,    // Ayarlar → Genel → "Leave empty calls" (null → Genel sekmesi yok)
+    stayLabel: null,          // "Are you still there?" sorusundaki "kal" düğmesinin metni
+    promptTimeoutMs: 1500,    // soru bu sürede yanıtlanmazsa Meet botu çıkarır
+}, __SCENARIO__);
+
+const TEXT = {
+    en: {
+        yourName: "Your name", whatsYourName: "What’s your name?",
+        askToJoin: "Ask to join", joinNow: "Join now", otherWays: "Other ways to join",
+        camOff: "Turn off camera (ctrl + e)", camOn: "Turn on camera (ctrl + e)",
+        micOff: "Turn off microphone (ctrl + d)", micOn: "Turn on microphone (ctrl + d)",
+        more: "More options", settings: "Settings", report: "Report a problem",
+        audio: "Audio", video: "Video", adaptive: "Adaptive audio",
+        nc: "Noise cancellation", ncHint: "Filters out sound that isn’t speech", close: "Close",
+        leave: "Leave call", asking: "Asking to be let in…",
+        hostWait: "You’ll join the call when someone lets you in", cancel: "Cancel",
+        cantJoin: "You can’t join this call", denied: "Someone in the call denied your request to join",
+        noResponse: "No one responded to your request to join the call",
+        cantJoinVideo: "You can't join this video call", removed: "You’ve been removed from the meeting",
+        permission: "Do you want people to see and hear you in the meeting?",
+        withoutMedia: "Continue without microphone and camera",
+        left: "You left the meeting", home: "Return to home screen", rejoin: "Rejoin",
+        popup: "Others may see your video differently", gotIt: "Got it",
+        switchHere: "Switch here", joinHereToo: "Join here too", companion: "Join with Companion mode",
+        phoneAudio: "Join and use a phone for audio",
+        general: "General", leaveEmpty: "Leave empty calls",
+        leaveEmptyHint: "Automatically leave a call if no one else joins", shortcuts: "Keyboard shortcuts",
+        stillThere: "Are you still there?", onlyOne: "You’re the only one here",
+        stay: "Stay in the call", leaveNow: "Leave now", keepWaiting: "Keep waiting",
+        sentToWaitingRoom: "You’ve been sent to the waiting room",
+        waitForHost: "Please wait until a meeting host brings you into the call",
+    },
+    tr: {
+        yourName: "Adınız", whatsYourName: "Adınız nedir?",
+        askToJoin: "Katılma isteği gönder", joinNow: "Hemen katıl", otherWays: "Diğer katılma yöntemleri",
+        camOff: "Kamerayı kapat (ctrl + e)", camOn: "Kamerayı aç (ctrl + e)",
+        micOff: "Mikrofonu kapat (ctrl + d)", micOn: "Mikrofonu aç (ctrl + d)",
+        more: "Diğer seçenekler", settings: "Ayarlar", report: "Sorun bildir",
+        audio: "Ses", video: "Video", adaptive: "Uyarlanabilir ses",
+        nc: "Gürültü giderme", ncHint: "Konuşma olmayan sesleri filtreler", close: "Kapat",
+        leave: "Görüşmeden ayrıl", asking: "Katılma isteği gönderiliyor…",
+        hostWait: "Biri sizi içeri aldığında görüşmeye katılacaksınız", cancel: "İptal",
+        cantJoin: "Bu görüşmeye katılamazsınız", denied: "Görüşmedeki biri katılma isteğinizi reddetti",
+        noResponse: "Katılma isteğinize kimse yanıt vermedi",
+        cantJoinVideo: "Bu video görüşmesine katılamazsınız", removed: "Toplantıdan çıkarıldınız",
+        permission: "Kullanıcıların toplantıda sizi görmesini ve duymasını istiyor musunuz?",
+        withoutMedia: "Mikrofon ve kamera olmadan devam et",
+        left: "Toplantıdan ayrıldınız", home: "Ana ekrana dön", rejoin: "Yeniden katıl",
+        popup: "Diğer kişiler videonuzu farklı görebilir", gotIt: "Anladım",
+        switchHere: "Buraya geç", joinHereToo: "Burada da katıl", companion: "Yardımcı moduyla katıl",
+        phoneAudio: "Katıl ve ses için telefon kullan",
+        general: "Genel", leaveEmpty: "Boş görüşmelerden ayrıl",
+        leaveEmptyHint: "Başka kimse katılmazsa görüşmeden otomatik olarak ayrıl", shortcuts: "Klavye kısayolları",
+        stillThere: "Hâlâ orada mısınız?", onlyOne: "Görüşmede tek kişi sizsiniz",
+        stay: "Görüşmede kal", leaveNow: "Şimdi ayrıl", keepWaiting: "Beklemeye devam et",
+        sentToWaitingRoom: "Bekleme odasına gönderildiniz",
+        waitForHost: "Bir toplantı sahibi sizi görüşmeye alana kadar lütfen bekleyin",
+    },
+}[SCENARIO.lang];
+
+const app = document.getElementById("app");
+const report = (name, data) => {
+    if (typeof window.__mockEvent === "function") window.__mockEvent(name, data || {});
+};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function el(tag, attrs, ...children) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs || {})) {
+        if (key === "onclick") node.addEventListener("click", value);
+        else if (value !== null && value !== undefined) node.setAttribute(key, value);
+    }
+    for (const child of children) node.append(child);
+    return node;
+}
+
+const mock = window.mock = {
+    phase: "loading",
+    joinClicks: [],
+    previewStream: null,
+    callStream: null,
+    mic: { muted: false },
+    cam: { muted: false },
+    noiseCancellation: SCENARIO.noiseCancellation,
+    adaptiveAudio: true,
+    leaveEmptyCalls: SCENARIO.leaveEmptyCalls,
+    shortcuts: true,
+    admit() { enterCall(); },
+    deny() { showEnd(TEXT.cantJoin, TEXT.denied); },
+    remove() { showEnd(TEXT.removed); report("removed"); },
+    stillThere() { showStillThere(); },
+    sendToWaitingRoom() { renderSentToWaitingRoom(); },
+    micLabel() {
+        const button = document.querySelector("[data-kind='mic']");
+        return button ? button.getAttribute("aria-label") : null;
+    },
+    async level(ms = 300) {
+        if (!mock.callStream) return 0;
+        if (!mock._analyser) {
+            const ctx = new AudioContext();
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 2048;
+            ctx.createMediaStreamSource(mock.callStream).connect(analyser);
+            mock._analyser = analyser;
+        }
+        await sleep(ms);
+        const data = new Float32Array(mock._analyser.fftSize);
+        mock._analyser.getFloatTimeDomainData(data);
+        return Math.sqrt(data.reduce((sum, x) => sum + x * x, 0) / data.length);
+    },
+};
+
+// ── Mikrofon / kamera düğmesi ──────────────────────────────
+function toggle(kind, tag) {
+    const state = kind === "mic" ? mock.mic : mock.cam;
+    const [labelOn, labelOff] = kind === "mic" ? [TEXT.micOff, TEXT.micOn] : [TEXT.camOff, TEXT.camOn];
+    const button = el(tag, { role: tag === "button" ? null : "button", tabindex: "0", "data-kind": kind });
+    const render = () => {
+        button.setAttribute("aria-label", state.muted ? labelOff : labelOn);
+        if (SCENARIO.toggleAttrs) button.setAttribute("data-is-muted", String(state.muted));
+        button.textContent = kind === "mic" ? (state.muted ? "mic_off" : "mic") : (state.muted ? "videocam_off" : "videocam");
+    };
+    button.addEventListener("click", async () => {
+        if (SCENARIO.toggleDelayMs) await sleep(SCENARIO.toggleDelayMs);
+        state.muted = !state.muted;
+        render();
+        report(`${kind}_toggled`, { muted: state.muted });
+    });
+    render();
+    return button;
+}
+
+function moreOptionsButton() {
+    return el("button", { "aria-label": TEXT.more, onclick: openMenu }, el("i", { "aria-hidden": "true" }, "more_vert"));
+}
+
+// ── Katılma ekranı ─────────────────────────────────────────
+async function renderPrejoin() {
+    // Gerçek Meet: mikrofon izni "sorulacak" durumdaysa katılma ekranı yerine bu pencere gelir
+    // (Chrome'un sahte izin arayüzü bayrağı bu durumu değiştirmez).
+    const permission = await navigator.permissions.query({ name: "microphone" });
+    if (permission.state !== "granted") {
+        mock.phase = "permission";
+        app.replaceChildren(el("div", { role: "dialog", "aria-label": TEXT.permission },
+            el("h2", {}, TEXT.permission),
+            moreOptionsButton(),
+            el("button", { onclick: () => report("continued_without_media") }, TEXT.withoutMedia)));
+        report("permission_dialog");
+        return;
+    }
+    mock.phase = "prejoin";
+    const video = el("video", { autoplay: "", muted: "" });
+    // Birincil düğme: Meet'teki gibi metni duruma göre değişir; aynı hesap toplantıdaysa "Switch here"
+    // (tıklanırsa o hesabın diğer oturumu toplantıdan bu sekmeye taşınır).
+    const joinButton = SCENARIO.switchHere
+        ? el("button", { onclick: () => { report("switch_here"); enterCall(); } }, TEXT.switchHere)
+        : el("button", { onclick: onJoinClick, "aria-label": SCENARIO.joinAriaLabel },
+            SCENARIO.joinLabel || (SCENARIO.anonymous ? TEXT.askToJoin : TEXT.joinNow));
+    const nodes = [video];
+    if (SCENARIO.anonymous) {
+        const input = el("input", { type: "text", "aria-label": TEXT.yourName, placeholder: TEXT.yourName, id: "name" });
+        input.addEventListener("input", () => { joinButton.disabled = input.value.trim() === ""; });
+        joinButton.disabled = true;
+        nodes.push(el("h2", {}, TEXT.whatsYourName), input);
+    }
+    nodes.push(el("div", { class: "row" }, toggle("mic", "div"), toggle("cam", "div"), moreOptionsButton()));
+    const joinRow = el("div", { class: "row" }, joinButton);
+    nodes.push(joinRow);
+    if (SCENARIO.otherWays) {
+        // Kapalı başlayan "Other ways to join" bölümü; "Join here too" yalnızca burada (Meet: ejy/Qiy).
+        const section = el("div", { class: "row", id: "other-ways", hidden: "" },
+            el("button", { onclick: () => report("companion") }, TEXT.companion));
+        if (SCENARIO.switchHere) {
+            section.append(el("button", { onclick: onJoinClick },
+                el("i", { "aria-hidden": "true" }, "add_to_queue"), TEXT.joinHereToo));
+        }
+        section.append(el("button", { onclick: () => report("phone_audio") }, TEXT.phoneAudio));
+        const toggleButton = el("button", { "aria-expanded": "false" },
+            el("i", { "aria-hidden": "true" }, "expand_more"), TEXT.otherWays);
+        toggleButton.addEventListener("click", () => {
+            section.hidden = !section.hidden;
+            toggleButton.setAttribute("aria-expanded", String(!section.hidden));
+            report("other_ways", { expanded: !section.hidden });
+        });
+        joinRow.append(toggleButton);
+        nodes.push(section);
+    }
+    app.replaceChildren(...nodes);
+    // Meet gibi: önizleme için ses + görüntü iste.
+    mock.previewStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    video.srcObject = mock.previewStream;
+}
+
+function onJoinClick() {
+    const name = document.getElementById("name");
+    const click = { name: name ? name.value : null, camMuted: mock.cam.muted, micMuted: mock.mic.muted };
+    mock.joinClicks.push(click);
+    report("join_click", click);
+    if (SCENARIO.admission === "direct") {
+        enterCall();
+        return;
+    }
+    renderWaiting();
+    if (SCENARIO.admission === "auto") setTimeout(enterCall, SCENARIO.admitAfterMs);
+    if (SCENARIO.admission === "deny") setTimeout(mock.deny, SCENARIO.admitAfterMs);
+    if (SCENARIO.admission === "noresponse") setTimeout(() => showEnd(TEXT.noResponse), SCENARIO.admitAfterMs);
+}
+
+function renderWaiting() {
+    mock.phase = "waiting";
+    // Gerçek Meet'te olduğu gibi önizleme ve mikrofon/kamera düğmeleri görünür kalır.
+    app.replaceChildren(
+        el("h2", {}, TEXT.asking),
+        el("p", {}, TEXT.hostWait),
+        el("div", { class: "row" }, toggle("mic", "div"), toggle("cam", "div"), moreOptionsButton()),
+        el("button", {}, TEXT.cancel),
+    );
+}
+
+// ── Toplantı içi ───────────────────────────────────────────
+async function enterCall() {
+    if (mock.phase === "call") return;
+    const readmitted = mock.phase === "sent-to-waiting-room";
+    mock.phase = "call";
+    if (readmitted) {
+        report("readmitted");
+        if (mock.callStream) mock.callStream.getTracks().forEach((track) => track.stop());
+        mock._analyser = null;  // mock.level() yeni izi ölçsün
+    }
+    // Meet yeni bir mikrofon izi alır ve önizleme akışını durdurur.
+    mock.callStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (mock.previewStream) mock.previewStream.getTracks().forEach((track) => track.stop());
+    if (SCENARIO.startMicMuted) mock.mic.muted = true;
+    const leave = el("button", { "aria-label": TEXT.leave, onclick: onLeave }, el("i", { "aria-hidden": "true" }, "call_end"));
+    const nodes = [el("p", {}, "3 participants")];
+    if (SCENARIO.participantMute) {
+        // Başka bir katılımcının döşemesindeki düğme: etiketi mikrofon düğmesine benzer, data-is-muted yok.
+        nodes.push(el("button", { "aria-label": "Mute Alice's microphone", onclick: () => report("participant_muted") }, "mic"));
+    }
+    nodes.push(el("div", { class: "row", id: "controls" },
+        toggle("mic", "button"), toggle("cam", "button"), moreOptionsButton(), leave));
+    if (SCENARIO.popup) {
+        const popup = el("div", { role: "dialog", id: "popup" }, el("p", {}, TEXT.popup));
+        popup.append(el("button", { onclick: () => popup.remove() }, TEXT.gotIt));
+        nodes.push(popup);
+    }
+    app.replaceChildren(...nodes);
+    report("in_call");
+}
+
+function onLeave() {
+    report("left");
+    showEnd(TEXT.left);
+}
+
+function showEnd(title, detail) {
+    mock.phase = "ended";
+    const nodes = [el("h1", {}, title)];
+    if (detail) nodes.push(el("p", {}, detail));
+    nodes.push(el("button", {}, TEXT.rejoin), el("button", {}, TEXT.home));
+    app.replaceChildren(...nodes);
+    const prompt = document.getElementById("still-there");
+    if (prompt) prompt.remove();
+}
+
+// ── "Are you still there?" ─────────────────────────────────
+// Toplantıda (tek katılımcı) ya da kabul beklerken; yanıt gelmezse Meet botu çıkarır / beklemeyi bitirir.
+function showStillThere() {
+    const inCall = mock.phase === "call";
+    const stayText = SCENARIO.stayLabel || (inCall ? TEXT.stay : TEXT.keepWaiting);
+    const dialog = el("div", { role: "dialog", id: "still-there" },
+        el("h2", {}, TEXT.stillThere), el("p", {}, TEXT.onlyOne));
+    const timer = setTimeout(() => {
+        if (!dialog.isConnected) return;
+        report("prompt_timeout", { inCall });
+        if (inCall) showEnd(TEXT.left);                // Meet'in "boş görüşmeden ayrıl" sonu
+        else showEnd(TEXT.stillThere, TEXT.home);      // katılım hatası 262
+    }, SCENARIO.promptTimeoutMs);
+    dialog.append(
+        el("button", { onclick: () => { clearTimeout(timer); dialog.remove(); report("prompt_left"); onLeave(); } },
+            TEXT.leaveNow),
+        el("button", { onclick: () => { clearTimeout(timer); dialog.remove(); report("stayed", { inCall }); } },
+            stayText));
+    document.body.append(dialog);
+    report("prompt_shown", { inCall });
+}
+
+// ── Toplantı sahibi botu bekleme odasına geri gönderdi ───────
+function renderSentToWaitingRoom() {
+    mock.phase = "sent-to-waiting-room";
+    app.replaceChildren(
+        el("div", { role: "alert" }, TEXT.sentToWaitingRoom),
+        el("p", {}, TEXT.waitForHost),
+        el("div", { role: "progressbar", "aria-label": "Loading" }));
+    report("sent_to_waiting_room");
+}
+
+// ── Diğer seçenekler → Ayarlar → Ses ───────────────────────
+// Material simgesi: aria-hidden değilse metni ("settings") erişilebilir ada karışır.
+function icon(name) {
+    return el("i", { "aria-hidden": SCENARIO.iconNames ? null : "true" }, name);
+}
+
+function openMenu() {
+    const existing = document.getElementById("menu");
+    if (existing) existing.remove();
+    const menu = el("ul", { role: "menu", id: "menu" },
+        el("li", { role: "menuitem", onclick: () => { menu.remove(); openSettings(); } }, icon("settings"), TEXT.settings),
+        el("li", { role: "menuitem" }, icon("feedback"), TEXT.report));
+    document.body.append(menu);
+}
+
+function settingSwitch(get, set) {
+    const sw = el("button", { role: "switch" });
+    const render = () => sw.setAttribute("aria-checked", String(get()));
+    sw.addEventListener("click", () => { set(!get()); render(); });
+    render();
+    return sw;
+}
+
+function openSettings() {
+    // Gerçek Meet'teki gibi Ses, Video ve Genel sekmeleri; pencere "Video" sekmesinde açılır.
+    const audioPanel = el("div", { class: "panel", hidden: "" },
+        el("section", {},
+            el("div", { class: "row" }, el("span", {}, TEXT.adaptive),
+                settingSwitch(() => mock.adaptiveAudio, (v) => { mock.adaptiveAudio = v; })),
+            el("div", { class: "row" },
+                el("div", {}, el("span", {}, TEXT.nc), el("div", {}, TEXT.ncHint)),
+                settingSwitch(() => mock.noiseCancellation, (v) => { mock.noiseCancellation = v; report("nc", { on: v }); }))));
+    const videoPanel = el("div", { class: "panel" }, el("p", {}, "Camera: Fake Video"));
+    const pages = [[TEXT.audio, "volume_up", audioPanel], [TEXT.video, "videocam", videoPanel]];
+    if (SCENARIO.leaveEmptyCalls !== null) {
+        // Genel: önce başka bir anahtar, sonra "Leave empty calls" (varsayılan açık).
+        const generalPanel = el("div", { class: "panel", hidden: "" },
+            el("section", {},
+                el("div", { class: "row" }, el("span", {}, TEXT.shortcuts),
+                    settingSwitch(() => mock.shortcuts, (v) => { mock.shortcuts = v; })),
+                el("div", { class: "row" },
+                    el("div", {}, el("span", {}, TEXT.leaveEmpty), el("div", {}, TEXT.leaveEmptyHint)),
+                    settingSwitch(() => mock.leaveEmptyCalls,
+                        (v) => { mock.leaveEmptyCalls = v; report("leave_empty_calls", { on: v }); }))));
+        pages.push([TEXT.general, "settings", generalPanel]);
+    }
+    const panels = pages.map(([, , panel]) => panel);
+    const tabs = pages.map(([label, name, panel]) =>
+        el("button", { role: "tab", onclick: () => {
+            for (const other of panels) other.hidden = other !== panel;
+        } }, icon(name), label));
+    const dialog = el("div", { role: "dialog", "aria-label": TEXT.settings, id: "settings" },
+        el("div", { role: "tablist" }, ...tabs), ...panels);
+    dialog.append(el("button", { "aria-label": TEXT.close, onclick: () => dialog.remove() },
+        el("i", { "aria-hidden": "true" }, "close")));
+    document.body.append(dialog);
+}
+
+// ── Başlangıç ──────────────────────────────────────────────
+setTimeout(() => {
+    if (SCENARIO.invalidCode) {
+        showEnd(TEXT.cantJoinVideo);  // gerçek Meet'in var olmayan kod için gösterdiği ekran
+        return;
+    }
+    renderPrejoin();
+}, SCENARIO.prejoinDelayMs);
+</script>
+</body>
+</html>

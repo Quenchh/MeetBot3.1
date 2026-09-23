@@ -1,0 +1,35 @@
+# ──────────────────────────────────────────────────────────────
+#  MeetBot systemd servisi (Linux sunucu)
+#
+#  Kurulum (README → "Linux Sunucuya Kurulum"):
+#    sudo cp deploy/meetbot.service /etc/systemd/system/
+#    sudo systemctl daemon-reload && sudo systemctl enable --now meetbot
+#  Günlük:  journalctl -u meetbot -f
+# ──────────────────────────────────────────────────────────────
+
+[Unit]
+Description=MeetBot - Google Meet muzik botu
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meetbot
+Group=meetbot
+WorkingDirectory=/opt/meetbot
+ExecStart=/opt/meetbot/.venv/bin/python main.py
+Environment=PYTHONUNBUFFERED=1
+# Ekran yok: bot Chrome'u kendi açtığı sanal ekranda (Xvfb) çalıştırır
+UnsetEnvironment=DISPLAY WAYLAND_DISPLAY
+Restart=on-failure
+RestartSec=5
+# Temiz kapanış: SIGTERM yalnızca ana sürece gider (mixed); oynatıcı, bot, Chrome ve Xvfb sırayla
+# kapanır. Hepsi aynı anda sinyal alsaydı Playwright sürücüsü önce ölür, Chrome düzgün kapanamazdı.
+# Zaman aşımında kalan süreçleri systemd SIGKILL ile toplar.
+KillMode=mixed
+TimeoutStopSec=45
+NoNewPrivileges=true
+PrivateTmp=false
+
+[Install]
+WantedBy=multi-user.target
