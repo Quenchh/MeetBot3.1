@@ -49,6 +49,7 @@ const SCENARIO = Object.assign({
     toggleDelayMs: 0,         // düğme durumu gecikmeli değişsin
     startMicMuted: false,     // Meet botu toplantıya sessizde alsın
     noiseCancellation: true,
+    studioNaming: false,      // 2026 Meet: "Ses Ayarları" sekmesi + "Stüdyo ses kalitesi" anahtarı, pencere Ses'te açılır
     popup: true,
     iconNames: false,         // menü/sekme simgeleri aria-hidden değil → ad "settingsSettings"
     participantMute: false,   // araç çubuğundan önce "Mute Alice's microphone" düğmesi
@@ -70,6 +71,9 @@ const TEXT = {
         more: "More options", settings: "Settings", report: "Report a problem",
         audio: "Audio", video: "Video", adaptive: "Adaptive audio",
         nc: "Noise cancellation", ncHint: "Filters out sound that isn’t speech", close: "Close",
+        audioSettings: "Audio settings", studio: "Studio sound",
+        studioHint: "Filters out sound that isn’t speech from your microphone",
+        pushToTalk: "Push to talk",
         leave: "Leave call", asking: "Asking to be let in…",
         hostWait: "You’ll join the call when someone lets you in", cancel: "Cancel",
         cantJoin: "You can’t join this call", denied: "Someone in the call denied your request to join",
@@ -96,6 +100,9 @@ const TEXT = {
         more: "Diğer seçenekler", settings: "Ayarlar", report: "Sorun bildir",
         audio: "Ses", video: "Video", adaptive: "Uyarlanabilir ses",
         nc: "Gürültü giderme", ncHint: "Konuşma olmayan sesleri filtreler", close: "Kapat",
+        audioSettings: "Ses Ayarları", studio: "Stüdyo ses kalitesi",
+        studioHint: "Mikrofonunuza gelen konuşma olmayan sesleri filtreler",
+        pushToTalk: "Konuşmak için basılı tutun",
         leave: "Görüşmeden ayrıl", asking: "Katılma isteği gönderiliyor…",
         hostWait: "Biri sizi içeri aldığında görüşmeye katılacaksınız", cancel: "İptal",
         cantJoin: "Bu görüşmeye katılamazsınız", denied: "Görüşmedeki biri katılma isteğinizi reddetti",
@@ -386,7 +393,19 @@ function openSettings() {
                 el("div", {}, el("span", {}, TEXT.nc), el("div", {}, TEXT.ncHint)),
                 settingSwitch(() => mock.noiseCancellation, (v) => { mock.noiseCancellation = v; report("nc", { on: v }); }))));
     const videoPanel = el("div", { class: "panel" }, el("p", {}, "Camera: Fake Video"));
-    const pages = [[TEXT.audio, "volume_up", audioPanel], [TEXT.video, "videocam", videoPanel]];
+    if (SCENARIO.studioNaming) {
+        // Gerçek Meet (2026, TR, oturum açık hesap): tek anahtar, farklı ad; açıklama aynı
+        audioPanel.replaceChildren(el("section", {},
+            el("div", { class: "row" },
+                el("div", {}, el("span", {}, TEXT.studio), el("div", {}, TEXT.studioHint)),
+                settingSwitch(() => mock.noiseCancellation, (v) => { mock.noiseCancellation = v; report("nc", { on: v }); })),
+            el("div", { class: "row" }, el("span", {}, TEXT.pushToTalk),
+                settingSwitch(() => mock.pushToTalk, (v) => { mock.pushToTalk = v; }))));
+        audioPanel.removeAttribute("hidden");
+        videoPanel.setAttribute("hidden", "");
+    }
+    const pages = [[SCENARIO.studioNaming ? TEXT.audioSettings : TEXT.audio, "speaker", audioPanel],
+                   [TEXT.video, "videocam", videoPanel]];
     if (SCENARIO.leaveEmptyCalls !== null) {
         // Genel: önce başka bir anahtar, sonra "Leave empty calls" (varsayılan açık).
         const generalPanel = el("div", { class: "panel", hidden: "" },

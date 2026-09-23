@@ -258,11 +258,12 @@ Sağ üstteki kilitli **Admin** düğmesine basın ve konsolda yazan (ya da `.en
 
 | Ne yazdınız? | Ne olur? |
 |---|---|
-| Video linki: `youtube.com/watch?v=…`, `youtu.be/…`, `youtube.com/shorts/…`, `music.youtube.com/watch?v=…` | O şarkı eklenir. Başında `https://` olmasa da olur. `watch?v=X&list=Y` gibi linklerde yalnızca X eklenir. |
-| Oynatma listesi: `youtube.com/playlist?list=…` | Listenin ilk `MEETBOT_PLAYLIST_LIMIT` (25) şarkısı eklenir. |
+| Video linki: `youtube.com/watch?v=…`, `youtu.be/…`, `youtube.com/shorts/…`, `music.youtube.com/watch?v=…` | O şarkı eklenir. Başında `https://` olmasa da olur. |
+| Oynatma listesi: `youtube.com/playlist?list=…` ya da listenin içinden kopyalanan `watch?v=…&list=…` | Listenin ilk `MEETBOT_PLAYLIST_LIMIT` (25) şarkısı eklenir. YouTube'un otomatik **Mix / Radyo** listelerinde (`list=RD…`) yalnızca o şarkı eklenir. |
 | Şarkı adı, ör. `daft punk one more time` | YouTube'daki **ilk arama sonucu** eklenir. |
 
 - Canlı yayınlar eklenmez. `MEETBOT_MAX_DURATION` ayarlanmışsa (varsayılan: sınırsız) ondan uzun şarkılar da eklenmez. Listeden eklerken kaç şarkının neden atlandığı bildirilir. Süresi eklenirken bilinmeyen bir şarkı (ör. bazı arama sonuçları) sınırı aşıyorsa indirme aşamasında reddedilir ve sırası gelince atlanır.
+- Şarkılar indirilip (dönüştürülmeden, opus/m4a) botun Meet sekmesine yüklenir. YouTube sunuculardan gelen indirmeleri ara sıra **403** ile reddeder; bot bu durumda başka bir YouTube istemcisiyle (`mweb`) otomatik olarak tekrar dener.
 - Bot toplantıda değilken de şarkı ekleyebilirsiniz. Şarkılar kuyrukta birikir ve ilk birkaçı önceden indirilir. Bot toplantıya girince çalma **kendiliğinden** başlar. O zamana kadar *Oynat* ve *Şimdi çal* düğmeleri "Bot toplantıda değil" notuyla pasif kalır.
 
 ### 5️⃣ Kuyruğu yönetin
@@ -471,7 +472,7 @@ Meet'in *Ayarlar → Genel → Boş görüşmelerden ayrıl* seçeneği (varsay�
 Bot düğmeleri TR/EN etiketlerinden tanır (*Katılma isteği gönder / Ask to join*, *Görüşmeden ayrıl / Leave call*…). Meet başka bir dilde açılırsa *"Meet katılma ekranı açılmadı (katılma düğmesi bulunamadı)"* hatası alırsınız. Çözüm: Botun Chrome penceresinde `chrome://settings/languages` sayfasını açıp **Türkçe** ya da **English**'i en üste taşıyın. Botun profilinde bir Google hesabı açıksa o hesabın dilini de kontrol edin.
 
 **🎚️ Müzik bozuk, kesik ya da "su altından geliyor" gibi**
-Sebebi büyük ihtimalle Meet'in **gürültü giderme** özelliğidir. Bot bunu katıldıktan sonra kapatmaya çalışır (*Diğer seçenekler → Ayarlar → Ses → Gürültü giderme*). Ancak bazı hesaplarda, özellikle anonim katılımda bu seçenek hiç bulunmayabilir; günlükte *"Gürültü giderme ayarı bulunamadı"* yazar. Seçenek varsa botun Meet penceresinden elle kapatabilirsiniz. Ayrıca `MEETBOT_NORMALIZE=false` ile kompresörü kapatmayı deneyebilirsiniz.
+Sebebi büyük ihtimalle Meet'in konuşma dışı sesleri süzen filtresidir: yeni arayüzde **Stüdyo ses kalitesi** (*"Mikrofonunuza gelen konuşma olmayan sesleri filtreler"*), eski arayüzde **Gürültü giderme**. Müzik de "konuşma olmayan ses" sayıldığı için boğuklaşır. Bot bunu katıldıktan sonra kapatır (*Diğer seçenekler → Ayarlar → Ses Ayarları → Stüdyo ses kalitesi*); günlükte *"Stüdyo ses / gürültü giderme kapatıldı"* yazar. Ancak bazı hesaplarda, özellikle anonim katılımda bu seçenek hiç bulunmayabilir; günlükte *"Gürültü giderme ayarı bulunamadı"* yazar. Seçenek varsa botun Meet penceresinden elle kapatabilirsiniz. Ayrıca `MEETBOT_NORMALIZE=false` ile kompresörü kapatmayı deneyebilirsiniz.
 
 **🔌 CDP portu / "zaten bir tarayıcı açık" uyarısı / bot toplantıda iki kez görünüyor**
 - `MEETBOT_CDP_PORT` (9222) portunda zaten bir tarayıcı varsa bot yenisini açmaz, uyarı verip **ona bağlanır**. Bu genelde önceki bir çalıştırmadan açık kalmış bot penceresidir. Bot o tarayıcıda kendi sekmesini açar ama tarayıcıyı **asla kapatmaz**. Sahte mikrofon ve otomatik oynatma bayraklarıyla açılmamış bir tarayıcıda ses gitmeyebilir.

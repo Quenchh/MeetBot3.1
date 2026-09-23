@@ -38,6 +38,22 @@ log = logging.getLogger("meetbot.audio")
 
 VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
 PLAYLIST_ID_RE = re.compile(r"^[A-Za-z0-9_-]{2,64}$")
+# YouTube'un otomatik "Mix / Radyo" listeleri (RD…): sonsuz, kullanıcının listesi değil → tek şarkı
+MIX_LIST_PREFIX = "RD"
+
+# İndirme denemeleri: YouTube veri merkezi IP'lerinde bazı format adreslerini rastgele 403 ile
+# reddediyor. Varsayılan istemci olmazsa "mweb" istemcisiyle, o da olmazsa yine varsayılanla denenir
+# (sunucuda ölçüm: varsayılan 5/6, mweb 6/6). None = yt-dlp'nin varsayılan istemcileri.
+DOWNLOAD_CLIENTS: tuple[Optional[str], ...] = (None, "mweb", None)
+# Yalnızca bu hatalarda başka istemciyle tekrar denenir (özel / silinmiş videoda boşuna denenmez)
+RETRYABLE_DOWNLOAD_ERRORS = (
+    "http error 403",
+    "unable to download video data",
+    "requested format is not available",
+    "the page needs to be reloaded",
+    "po token",
+    "http error 5",
+)
 _SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.\-]*://", re.IGNORECASE)
 _SINGLE_VIDEO_PATH_RE = re.compile(r"^/(?:shorts|live|embed|v|e)/([^/?#]+)")
 # Katı alan adı: urlsplit'in ana makine adında bıraktığı ama başka URL ayrıştırıcılarının
@@ -225,9 +241,12 @@ def _classify_url(url: str, allowed_hosts: tuple[str, ...]) -> Target:
             video_id = match.group(1)
 
     if video_id is not None:
-        # watch?v=X&list=Y → sadece X (liste yok sayılır)
         if not is_valid_video_id(video_id):
             raise ResolveError("Geçersiz YouTube bağlantısı")
+        # watch?v=X&list=Y → oynatma listesinin tamamı (listenin içinden kopyalanan link).
+        # Otomatik Mix/Radyo listeleri (RD…) hariç: onlarda yalnızca X eklenir.
+        if list_id is not None and not list_id.startswith(MIX_LIST_PREFIX) and PLAYLIST_ID_RE.match(list_id):
+            return Target("playlist", f"https://www.youtube.com/playlist?list={list_id}")
         return Target("video", canonical_watch_url(video_id))
 
     if list_id is not None:
@@ -523,8 +542,9 @@ class Downloader:
             rules.append(f"duration <=? {self.settings.max_duration}")  # "?": süre yoksa geçer
         return " & ".join(rules)
 
-    def download_args(self, video_id: str) -> list[str]:
-        return self.base_args() + [
+    def download_args(self, video_id: str, client: Optional[str] = None) -> list[str]:
+        extra = ["--extractor-args", f"youtube:player_client={client}"] if client else []
+        return self.base_args() + extra + [
             "-f", AUDIO_FORMAT,
             "--no-playlist",
             "--match-filter", self.download_filter(),
@@ -635,7 +655,7 @@ class Downloader:
         log.info("⬇️  İndiriliyor: %s", video_id)
         completed = False
         try:
-            code, stdout, stderr = await self._run(self.download_args(video_id), self.settings.download_timeout)
+            code, stdout, stderr = await self._run_download_attempts(video_id)
             if code != 0:
                 log.error("❌  yt-dlp indirme hatası (%s): %s", video_id, stderr.strip()[-2000:])
                 raise DownloadError(friendly_error(stderr, "Şarkı indirilemedi"))
@@ -658,6 +678,31 @@ class Downloader:
                 self._remove_leftovers(video_id)  # hata/zaman aşımı/iptal → yarım dosya kalmasın
         log.info("✅  İndirildi: %s (%.1f MB)", path.name, path.stat().st_size / 1_048_576)
         return path
+
+    async def _run_download_attempts(self, video_id: str) -> tuple[int, str, str]:
+        """DOWNLOAD_CLIENTS sırasıyla dener; yalnızca geçici / istemciye bağlı hatalarda devam eder.
+        Toplam süre download_timeout ile sınırlıdır."""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + self.settings.download_timeout
+        result = (1, "", "")
+        for attempt, client in enumerate(DOWNLOAD_CLIENTS, start=1):
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError
+            result = await self._run(self.download_args(video_id, client), remaining)
+            code, _stdout, stderr = result
+            if code == 0:
+                if attempt > 1:
+                    log.info("🔁  %d. denemede indirildi (%s istemcisi): %s", attempt, client or "varsayılan", video_id)
+                return result
+            lowered = stderr.lower()
+            if attempt == len(DOWNLOAD_CLIENTS) or not any(e in lowered for e in RETRYABLE_DOWNLOAD_ERRORS):
+                return result
+            reason = next(line for line in reversed(stderr.strip().splitlines() or [""]))[:200]
+            log.warning("🔁  İndirme denemesi %d başarısız (%s istemcisi), tekrar deneniyor: %s — %s",
+                        attempt, client or "varsayılan", video_id, reason)
+            self._remove_leftovers(video_id)
+        return result
 
     def _remove_leftovers(self, video_id: str) -> None:
         """<id>.* dosyalarını siler; yalnızca bu video için geçerli önbellek YOKKEN çağrılır."""

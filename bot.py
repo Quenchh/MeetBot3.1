@@ -182,10 +182,18 @@ MORE_OPTIONS_RE = re.compile(r"^\s*(more options|diğer seçenekler)\s*$", re.IG
 # verilir. (Playwright bu ifadeleri JS'e taşır; satır içi bayrak kullanılamadığından büyük/küçük
 # harf elle yazıldı — "Other settings" gibi başka öğeler eşleşmez.)
 SETTINGS_ITEM_RE = re.compile(r"^\s*(?:[a-z_]+\s*)?(?:[Ss]ettings|[Aa]yarlar)\s*$")
-AUDIO_TAB_RE = re.compile(r"^\s*(?:[a-z_]+\s*)?(?:[Aa]udio|[Ss]es)\s*$")
+AUDIO_TAB_RE = re.compile(r"^\s*(?:[a-z_]+\s*)?(?:[Aa]udio(?: [Ss]ettings)?|[Ss]es(?: [Aa]yarları)?)\s*$")
 GENERAL_TAB_RE = re.compile(r"^\s*(?:[a-z_]+\s*)?(?:[Gg]eneral|[Gg]enel)\s*$")
 DIALOG_CLOSE_RE = re.compile(r"^\s*(close|close dialog|kapat|[iİ]letişim kutusunu kapat)\s*$", re.IGNORECASE)
-NOISE_CANCELLATION_LABELS = ("noise cancellation", "gürültü giderme", "gürültü engelleme", "gürültü önleme")
+# Meet'in konuşma dışı sesleri süzen filtresi müziği boğar. Adı değişiyor: eskiden "Gürültü giderme /
+# Noise cancellation", 2026'da TR arayüzde "Stüdyo ses kalitesi" (açıklaması aynı: "…konuşma olmayan
+# sesleri filtreler"). Etiket ya da açıklama (önek) eşleşirse o satırdaki anahtar kapatılır.
+NOISE_CANCELLATION_LABELS = (
+    "noise cancellation", "gürültü giderme", "gürültü engelleme", "gürültü önleme",
+    "stüdyo ses", "studio sound", "studio audio", "studio-quality",
+    "mikrofonunuza gelen konuşma olmayan", "konuşma olmayan sesleri", "filters out sound that isn",
+    "filters out non-speech",
+)
 # Ayarlar → Genel → "Leave empty calls" (varsayılan AÇIK): bot görüşmede tek kalınca Meet birkaç dakika
 # sonra "Hâlâ orada mısınız?" diye sorar, yanıt gelmezse botu çıkarır. (TR etiketleri önek olarak eşleşir.)
 LEAVE_EMPTY_CALL_LABELS = ("leave empty call", "boş görüşme", "boş arama", "boş toplantı")
@@ -1122,7 +1130,7 @@ class MeetBot:
             dialog = page.get_by_role("dialog").filter(visible=True).last
             await dialog.wait_for(state="visible", timeout=5000)
             await self._switch_off_setting(page, dialog, AUDIO_TAB_RE, NOISE_CANCELLATION_LABELS,
-                                           "Gürültü giderme", tab_required=False)
+                                           "Stüdyo ses / gürültü giderme", tab_required=False)
             await self._switch_off_setting(page, dialog, GENERAL_TAB_RE, LEAVE_EMPTY_CALL_LABELS,
                                            "Boş görüşmelerden ayrılma", tab_required=True)
             await self._close_dialog(page, dialog)

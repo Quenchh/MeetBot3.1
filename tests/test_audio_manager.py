@@ -50,11 +50,22 @@ WATCH = f"https://www.youtube.com/watch?v={VID}"
     f"https://www.youtube.com/shorts/{VID}",
     f"https://www.youtube.com/live/{VID}?feature=share",
     f"https://www.youtube.com/embed/{VID}",
-    f"https://www.youtube.com/watch?v={VID}&list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI&index=3",
+    f"https://www.youtube.com/watch?v={VID}&list=RD{VID}&start_radio=1",
     f"HTTPS://WWW.YOUTUBE.COM/watch?v={VID}",
 ])
 def test_video_urls_become_canonical_single_video(query):
     assert classify_query(query, HOSTS) == Target("video", WATCH)
+
+
+@pytest.mark.parametrize("query,list_id", [
+    (f"https://www.youtube.com/watch?v={VID}&list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI&index=3",
+     "PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI"),
+    (f"https://music.youtube.com/watch?v={VID}&list=OLAK5uy_abc-123", "OLAK5uy_abc-123"),
+    (f"https://youtu.be/{VID}?list=PLabc123&si=x", "PLabc123"),
+])
+def test_video_link_copied_from_a_playlist_adds_the_whole_playlist(query, list_id):
+    # Listenin içinden kopyalanan link: kullanıcı listeyi istiyor (otomatik Mix/Radyo listeleri hariç)
+    assert classify_query(query, HOSTS) == Target("playlist", f"https://www.youtube.com/playlist?list={list_id}")
 
 
 @pytest.mark.parametrize("query,expected", [
@@ -757,3 +768,56 @@ async def test_network_download_filter_blocks_overlong_video(real_downloader, se
     with pytest.raises(DownloadError, match="çok uzun"):
         await real_downloader.download(VID)
     assert list(real_downloader.downloads_dir.iterdir()) == []
+
+
+# ──────────────────────────────────────────────────────────────
+#  İndirme: veri merkezi IP'lerindeki rastgele 403'e karşı başka istemciyle tekrar deneme
+# ──────────────────────────────────────────────────────────────
+
+class _ScriptedRuns:
+    """Downloader._run yerine: her çağrıda sıradaki sonucu döndürür, başarıda dosyayı oluşturur."""
+
+    def __init__(self, downloader, results):
+        self.downloader = downloader
+        self.results = list(results)
+        self.calls = []
+
+    async def __call__(self, args, timeout):
+        self.calls.append(args)
+        code, stdout, stderr = self.results.pop(0)
+        if code == 0:
+            (self.downloader.downloads_dir / f"{VID}.webm").write_bytes(b"ses")
+        return code, stdout, stderr
+
+
+def _client_of(args):
+    return args[args.index("--extractor-args") + 1] if "--extractor-args" in args else None
+
+
+async def test_download_retries_403_with_the_mweb_client(downloader, monkeypatch):
+    runs = _ScriptedRuns(downloader, [
+        (1, "", "ERROR: unable to download video data: HTTP Error 403: Forbidden"),
+        (0, "", ""),
+    ])
+    monkeypatch.setattr(downloader, "_run", runs)
+    path = await downloader.download(VID)
+    assert path.endswith(f"{VID}.webm")
+    assert [_client_of(a) for a in runs.calls] == [None, "youtube:player_client=mweb"]
+
+
+async def test_download_gives_up_after_all_clients_fail(downloader, monkeypatch):
+    forbidden = (1, "", "ERROR: unable to download video data: HTTP Error 403: Forbidden")
+    runs = _ScriptedRuns(downloader, [forbidden] * 3)
+    monkeypatch.setattr(downloader, "_run", runs)
+    with pytest.raises(DownloadError, match="indirilemedi"):
+        await downloader.download(VID)
+    assert [_client_of(a) for a in runs.calls] == [None, "youtube:player_client=mweb", None]
+    assert not list(downloader.downloads_dir.glob(f"{VID}.*"))
+
+
+async def test_download_does_not_retry_permanent_errors(downloader, monkeypatch):
+    runs = _ScriptedRuns(downloader, [(1, "", "ERROR: [youtube] abc: Private video. Sign in if you've been granted access")])
+    monkeypatch.setattr(downloader, "_run", runs)
+    with pytest.raises(DownloadError, match="gizli"):
+        await downloader.download(VID)
+    assert len(runs.calls) == 1

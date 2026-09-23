@@ -238,6 +238,17 @@ async def test_meet_permission_dialog_is_avoided_by_granting_media_access(chromi
 
 
 @browser
+@pytest.mark.parametrize("lang", ["tr", "en"])
+async def test_studio_sound_filter_is_switched_off(meet, lang):
+    # 2026 Meet (oturum açık hesap): "Ses Ayarları" sekmesinde "Stüdyo ses kalitesi" — konuşma olmayan
+    # sesleri (müziği!) süzer. Eski ad "Gürültü giderme"ydi; bot yenisini de kapatmalı, komşusuna dokunmamalı.
+    page = await join(meet, {"lang": lang, "anonymous": False, "studioNaming": True})
+    state = await mock_state(page, "{ nc: mock.noiseCancellation, ptt: !!mock.pushToTalk }")
+    assert state == {"nc": False, "ptt": False}
+    assert meet.mock.first("nc") == {"on": False}
+
+
+@browser
 async def test_turkish_ui_with_label_only_toggles(meet):
     page = await join(meet, {"lang": "tr", "anonymous": False, "toggleAttrs": False, "popup": True})
     assert ("connecting", "Toplantıya giriliyor…") in meet.rec.statuses

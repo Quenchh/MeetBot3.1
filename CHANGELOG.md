@@ -132,6 +132,9 @@ Biçim [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) önerisine dayan
 - Windows'ta Ctrl+Break ile de temiz kapanış.
 
 ### Değişiklikler
+- **Boğuk ses düzeltmesi:** Meet konuşma dışı ses filtresinin adını değiştirdi ("Gürültü giderme" → **"Stüdyo ses kalitesi"**, sekme "Ses" → "Ses Ayarları"); bot yeni adı bulamadığı için filtre açık kalıyor ve müziği boğuyordu. Bot artık yeni adı, eski adı ve anahtarın açıklamasını ("…konuşma olmayan sesleri filtreler") tanıyıp kapatıyor.
+- **Listeden kopyalanan linkler listeyi ekliyor:** `watch?v=X&list=Y` artık oynatma listesinin tamamını ekliyor (en fazla `MEETBOT_PLAYLIST_LIMIT`); YouTube'un otomatik Mix/Radyo listelerinde (`RD…`) yalnızca o şarkı.
+- **İndirmede otomatik yeniden deneme:** YouTube veri merkezi IP'lerinden gelen indirmeleri rastgele `HTTP 403` ile reddediyor (sunucuda ölçüm: varsayılan istemci 5/6). Geçici hatalarda sırayla `mweb` istemcisiyle ve yeniden varsayılanla denenir (ölçüm: `mweb` 6/6); özel/silinmiş videolarda boşuna denenmez.
 - **Şarkı süresi sınırı kaldırıldı:** `MEETBOT_MAX_DURATION` varsayılanı artık `0` (sınırsız); istenirse saniye cinsinden sınır verilebilir. Uzun videolar için `MEETBOT_DOWNLOAD_TIMEOUT` varsayılanı 300 → 900 sn. Canlı yayınlar yine reddedilir.
 - **ffmpeg artık gerekmiyor.** Ses mp3'e dönüştürülmeden, YouTube'un kendi biçiminde (opus/webm ya da m4a) indiriliyor.
 - **Node.js (22+) gerekli hale geldi.** YouTube'un JS doğrulaması için yt-dlp'ye `--js-runtimes node` veriliyor (`MEETBOT_YTDLP_JS_RUNTIME`). Çözücü paket `yt-dlp-ejs`, `yt-dlp[default]` ile geliyor.
